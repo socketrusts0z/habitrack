@@ -621,8 +621,8 @@ async function renderHabitTrackers() {
         actDefault.className = 'action-btn default';
         actHide.title = 'Hide Habit';
         actDefault.title = 'Set as Default';
-        actHide.onclick = async (e) => { e.stopPropagation(); habitToDelete = h; await el('hide-option').onclick(); };
-        actDefault.onclick = async (e) => { e.stopPropagation(); habitToDelete = h; await el('set-default-option').onclick(); };
+        actHide.onclick = async (e) => { e.stopPropagation(); await hideHabit(h); };
+        actDefault.onclick = async (e) => { e.stopPropagation(); await setDefaultHabit(h); };
         actions.appendChild(actHide); actions.appendChild(actDefault);
 
         wrap.appendChild(btn);
@@ -664,6 +664,22 @@ async function renderHabitTrackers() {
     }
     nav.classList.toggle('manage-mode', habitManageMode);
     showHabitGrid(activeHabitName && visibleHabits.includes(activeHabitName) ? activeHabitName : (visibleHabits.includes(def) ? def : visibleHabits[0]));
+}
+
+async function hideHabit(name) {
+    const hidden = await getData('hidden_habits');
+    if (!hidden.includes(name)) {
+        hidden.push(name);
+        await setData('hidden_habits', hidden);
+        showToast(`Hidden: ${name}`);
+        renderHabitTrackers(); updateWeeklyInsights();
+    }
+}
+
+async function setDefaultHabit(name) {
+    await setData('default_habit', name);
+    showToast(`Default: ${name}`);
+    renderHabitTrackers();
 }
 
 async function renderHabitGraph(name) {
