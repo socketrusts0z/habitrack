@@ -814,6 +814,7 @@ function openHabitMenuAt(clientX, clientY) {
 }
 
 function attachHabitLongPress(elm, habitName) {
+    const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
     let timer = null;
     let fired = false;
     const start = (e) => {
@@ -845,6 +846,7 @@ function attachHabitLongPress(elm, habitName) {
     elm.addEventListener('touchmove', cancel);
     elm.addEventListener('contextmenu', (e) => {
         e.preventDefault();
+        if (isTouchDevice) return;
         habitToDelete = habitName;
         openHabitMenuAt(e.clientX, e.clientY);
     });
