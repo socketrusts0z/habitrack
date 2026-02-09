@@ -104,10 +104,6 @@ function setupEventListeners() {
 
     document.addEventListener('click', (e) => {
         if (!el('custom-context-menu').contains(e.target)) el('custom-context-menu').classList.add('hidden');
-        if (!el('emoji-picker').contains(e.target)) el('emoji-picker').classList.add('hidden');
-        document.querySelectorAll('.habit-swipe.swiped').forEach(w => {
-            if (!e.target.closest('.habit-swipe')) w.classList.remove('swiped');
-        });
     });
 
     el('date')?.addEventListener('change', refreshDashboard);
@@ -618,25 +614,16 @@ async function renderHabitTrackers() {
         btn.innerHTML = `${emoji}<span class="habit-name">${h}</span>`;
         btn.onclick = () => showHabitGrid(h);
 
-        const actions = document.createElement('div'); actions.className = 'habit-manage-actions';
-        const actIcon = document.createElement('button'); actIcon.type = 'button'; actIcon.textContent = 'Icon';
-        const actHide = document.createElement('button'); actHide.type = 'button'; actHide.textContent = 'Hide';
-        const actDel = document.createElement('button'); actDel.type = 'button'; actDel.textContent = 'Delete';
-        actIcon.className = 'action-btn';
-        actHide.className = 'action-btn';
-        actDel.className = 'action-btn danger';
-        actIcon.onclick = (e) => {
-            e.stopPropagation();
-            habitToDelete = h;
-            const picker = el('emoji-picker');
-            const r = wrap.getBoundingClientRect();
-            picker.style.cssText = `top:${r.bottom + window.scrollY + 6}px;left:${r.left + window.scrollX}px;`;
-            renderEmojiPicker(h);
-            picker.classList.remove('hidden');
-        };
+        const actions = document.createElement('div'); actions.className = 'habit-mini-actions';
+        const actHide = document.createElement('button'); actHide.type = 'button'; actHide.textContent = '−';
+        const actDefault = document.createElement('button'); actDefault.type = 'button'; actDefault.textContent = '+';
+        actHide.className = 'action-btn hide';
+        actDefault.className = 'action-btn default';
+        actHide.title = 'Hide Habit';
+        actDefault.title = 'Set as Default';
         actHide.onclick = async (e) => { e.stopPropagation(); habitToDelete = h; await el('hide-option').onclick(); };
-        actDel.onclick = async (e) => { e.stopPropagation(); habitToDelete = h; await el('delete-option').onclick(); };
-        actions.appendChild(actIcon); actions.appendChild(actHide); actions.appendChild(actDel);
+        actDefault.onclick = async (e) => { e.stopPropagation(); habitToDelete = h; await el('set-default-option').onclick(); };
+        actions.appendChild(actHide); actions.appendChild(actDefault);
 
         wrap.appendChild(btn);
         wrap.appendChild(actions);
