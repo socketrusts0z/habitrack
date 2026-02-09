@@ -88,12 +88,14 @@ body {
     .stat-streak { font-size: 14px; font-weight: 600; color: var(--primary); }
     .stat-pb { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-weight: 500; }
     
-.dashboard-grid { display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; margin-top: 0; min-width: 0; }
+.dashboard-grid { display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; margin-top: 0; min-width: 0; width: 100%; }
+.left-column, .right-column { min-width: 0; }
 .right-column { min-width: 0; }
-.card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem; margin-bottom: 1.25rem; min-width: 0; }
+.card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem; margin-bottom: 1.25rem; min-width: 0; width: 100%; }
 .section-title { font-size: 1rem; font-weight: 700; margin-top: 0; margin-bottom: 0.9rem; }
     
-    .grid-display, .habit-grid-instance { display: flex; flex-wrap: wrap; gap: 3px; user-select: none; max-width: 100%; min-width: 0; }
+.grid-display, .habit-grid-instance { display: flex; flex-wrap: wrap; gap: 3px; user-select: none; max-width: 100%; min-width: 0; width: 100%; }
+.grid-wrapper { width: 100%; overflow: hidden; }
     .graph-day, .habit-day { width: 11px; height: 11px; border-radius: 2px; background-color: var(--lvl-0); cursor: pointer; outline: 1px solid rgba(27, 31, 35, 0.04); }
     .level-1 { background-color: var(--lvl-1); } .level-2 { background-color: var(--lvl-2); }
     .level-3 { background-color: var(--lvl-3); } .level-4 { background-color: var(--lvl-4); }
