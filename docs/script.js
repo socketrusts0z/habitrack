@@ -147,14 +147,11 @@ function setupEventListeners() {
 
     el('snippet-week-picker').onchange = loadSnippet;
 
-    el('share-weekly-card').onclick = async () => {
-        const data = await buildMonthlyCardData();
-        const url = await renderMonthlyCardImage(data);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `monthly-card-${data.endDate}.png`;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 2000);
+    el('habit-create-toggle').onclick = () => {
+        const panel = el('habit-create-panel');
+        const isHidden = panel.classList.toggle('hidden');
+        el('habit-create-toggle').setAttribute('aria-expanded', String(!isHidden));
+        if (!isHidden) el('new-habit-name').focus();
     };
     
     el('save-snippet').onclick = async () => {
@@ -215,7 +212,12 @@ function setupEventListeners() {
         }
     };
 
-    el('create-habit').onclick = () => { createHabit(el('new-habit-name').value.trim()); el('new-habit-name').value = ''; };
+    el('create-habit').onclick = () => {
+        createHabit(el('new-habit-name').value.trim());
+        el('new-habit-name').value = '';
+        el('habit-create-panel').classList.add('hidden');
+        el('habit-create-toggle').setAttribute('aria-expanded', 'false');
+    };
     el('splash-create-btn').onclick = () => createHabit(el('splash-habit-name').value.trim());
 
     el('set-default-option').onclick = async () => {

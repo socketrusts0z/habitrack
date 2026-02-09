@@ -38,9 +38,13 @@
                 </div>
             </div>
             <div class="header-actions">
-                <input type="text" id="new-habit-name" placeholder="New habit name...">
-                <button type="button" id="create-habit" class="btn-primary">Create Habit</button>
-                <button type="button" id="share-weekly-card" class="btn-primary" style="background-color: #57606a;">Share Monthly Card</button>
+                <div class="habit-create">
+                    <button type="button" id="habit-create-toggle" class="btn-primary habit-create-toggle" aria-expanded="false" aria-controls="habit-create-panel">+</button>
+                    <div id="habit-create-panel" class="habit-create-panel hidden">
+                        <input type="text" id="new-habit-name" placeholder="New habit name...">
+                        <button type="button" id="create-habit" class="btn-primary">Add</button>
+                    </div>
+                </div>
                 <div class="theme-toggle-wrapper">
                     <button id="theme-toggle" title="Toggle Light/Dark Mode">
                         <span class="sun-icon">&#x2600;&#xFE0F;</span>

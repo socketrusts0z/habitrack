@@ -51,7 +51,26 @@ body {
     }
 .app-container { max-width: 1200px; margin: 0 auto; padding: 1.25rem 2rem; width: 100%; }
 .header-actions-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-.header-actions { display: flex; gap: 10px; align-items: center; }
+.header-actions { display: flex; gap: 10px; align-items: center; min-width: 0; }
+.theme-toggle-wrapper { flex-shrink: 0; }
+.habit-create { position: relative; display: inline-flex; align-items: center; gap: 8px; }
+.habit-create-toggle { width: 40px; height: 40px; border-radius: 12px; padding: 0; font-size: 24px; line-height: 1; }
+.habit-create-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+    z-index: 1000;
+}
+.habit-create-panel.hidden { display: none !important; }
 .summary-title-wrap { position: relative; display: inline-flex; align-items: center; }
 .summary-title-btn { background: transparent; border: none; padding: 0; font-size: 0.9rem; font-weight: 600; color: var(--text-main); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
 .summary-caret { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
@@ -176,8 +195,12 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
     .card { padding: 1rem; border-radius: 14px; }
     .section-title { font-size: 1.1rem; }
     .header-actions-row { gap: 12px; }
-    .header-actions { width: 100%; flex-direction: column; align-items: stretch; gap: 12px; }
-    .header-actions > * { width: 100%; }
+    .header-actions { width: 100%; flex-direction: row; align-items: center; gap: 12px; flex-wrap: nowrap; }
+    .header-actions > * { width: auto; }
+    .habit-create { flex: 0 0 auto; }
+    .habit-create-panel { width: min(100vw - 2.5rem, 360px); }
+    .habit-create-panel input { flex: 1; min-width: 0; }
+    .theme-toggle-wrapper { margin-left: auto; flex: 0 0 auto; width: 44px; }
     #habit-manage-toggle { width: auto; align-self: flex-end; }
     .summary-title-btn { font-size: 1.05rem; }
     .summary-caret { font-size: 0.9rem; }
