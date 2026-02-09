@@ -79,8 +79,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if ((await getData('food_list')).length === 0) await setData('food_list', DEFAULT_FOODS);
-    await refreshDashboard();
     setupEventListeners();
+    try {
+        await refreshDashboard();
+    } catch (e) {
+        console.error(e);
+        showToast('Load error');
+    }
 });
 
 async function refreshDashboard() {
@@ -221,17 +226,20 @@ function setupEventListeners() {
         }
     };
 
-    el('set-icon-option').onclick = async (e) => {
-        e.stopPropagation();
-        if (!habitToDelete) return;
-        const menu = el('custom-context-menu');
-        const picker = el('emoji-picker');
-        const r = menu.getBoundingClientRect();
-        picker.style.cssText = `top:${r.bottom + window.scrollY + 6}px;left:${r.left + window.scrollX}px;`;
-        renderEmojiPicker(habitToDelete);
-        picker.classList.remove('hidden');
-        el('custom-context-menu').classList.add('hidden');
-    };
+    const iconOpt = el('set-icon-option');
+    if (iconOpt) {
+        iconOpt.onclick = async (e) => {
+            e.stopPropagation();
+            if (!habitToDelete) return;
+            const menu = el('custom-context-menu');
+            const picker = el('emoji-picker');
+            const r = menu.getBoundingClientRect();
+            picker.style.cssText = `top:${r.bottom + window.scrollY + 6}px;left:${r.left + window.scrollX}px;`;
+            renderEmojiPicker(habitToDelete);
+            picker.classList.remove('hidden');
+            el('custom-context-menu').classList.add('hidden');
+        };
+    }
 
     el('hide-option').onclick = async () => {
         if (!habitToDelete) return;
@@ -267,6 +275,7 @@ function setupEventListeners() {
     };
 
     el('import-btn').onclick = async () => {
+        showToast('Import clicked');
         const text = el('import-json').value.trim();
         if (text) return runImport(text);
         el('import-file').click();
@@ -281,6 +290,7 @@ function setupEventListeners() {
     };
 
     el('export-btn').onclick = async () => {
+        showToast('Export clicked');
         const data = await getAllData();
         const filename = `backup-${getLocalDateString()}.json`;
         const text = JSON.stringify(data, null, 2);
