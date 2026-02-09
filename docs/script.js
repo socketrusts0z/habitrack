@@ -267,9 +267,23 @@ function setupEventListeners() {
 
     el('export-btn').onclick = async () => {
         const data = await getAllData();
+        const filename = `backup-${getLocalDateString()}.json`;
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'application/json' })] }) && navigator.share) {
+            try {
+                await navigator.share({ files: [new File([blob], filename, { type: 'application/json' })], title: filename });
+                return;
+            } catch {}
+        }
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
-        a.download = `backup-${getLocalDateString()}.json`; a.click();
+        a.href = url;
+        a.download = filename;
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
     };
 
     el('clear-all-btn').onclick = async () => confirm("Clear all?") && (await clearAllData(), location.reload());
