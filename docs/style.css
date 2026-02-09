@@ -67,7 +67,7 @@
     .stat-streak { font-size: 14px; font-weight: 600; color: var(--primary); }
     .stat-pb { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-weight: 500; }
     
-    .dashboard-grid { display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; margin-top: 0; }
+.dashboard-grid { display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; margin-top: 0; }
     .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; margin-bottom: 1.5rem; }
     .section-title { font-size: 0.9rem; font-weight: 600; margin-top: 0; margin-bottom: 1rem; }
     
@@ -99,7 +99,7 @@
     .food-controls { margin-bottom: 1.25rem; display: flex; flex-direction: column; gap: 8px; }
     .search-bar { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--subtle-bg); font-size: 14px; color: var(--text-main); }
     
-    .food-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1.5rem; max-height: 240px; overflow-y: auto; }
+.food-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1.5rem; max-height: 240px; overflow-y: auto; }
     .food-box { background: var(--subtle-bg); border: 1px solid var(--border); padding: 10px; border-radius: 6px; font-size: 12px; cursor: pointer; text-align: center; }
     .food-box:hover { border-color: var(--primary); }
     
@@ -141,3 +141,23 @@
 #snippet-preview-container li { margin-left: 20px; list-style-type: disc; margin-bottom: 0.1rem; color: var(--text-main); }
 #snippet-preview-container br { content: ""; display: block; margin-bottom: 0.2rem; }
 .collapsed { display: none !important; }
+
+@media (max-width: 980px) {
+    .app-container { padding: 1rem; }
+    .dashboard-grid { grid-template-columns: 1fr; }
+    .right-column { order: -1; }
+    .header-actions-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .header-actions { flex-wrap: wrap; }
+    .habit-nav { overflow-x: auto; padding-bottom: 6px; }
+    .habit-nav-item { white-space: nowrap; }
+}
+
+@media (max-width: 600px) {
+    .section-title { font-size: 0.85rem; }
+    .insights-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    .food-grid { grid-template-columns: 1fr; max-height: 200px; }
+    .protein-meter { transform: scale(0.9); }
+    .grid-display, .habit-grid-instance { gap: 2px; }
+    .graph-day, .habit-day { width: 9px; height: 9px; }
+    .summary-menu { min-width: 140px; }
+}
