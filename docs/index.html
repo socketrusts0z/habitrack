@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Habit Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffffff">
+</head>
+<body>
+<div id="splash-screen" class="splash-overlay hidden">
+    <div class="splash-content">
+        <div class="splash-icon">&#x1F680;</div>
+        <h1>Welcome to HabiTrack</h1>
+        <p>Start your journey by creating your first habit!</p>
+        <div class="splash-action">
+            <input type="text" id="splash-habit-name" placeholder="e.g., Drink Water">
+            <button id="splash-create-btn" class="btn-primary">Get Started</button>
+        </div>
+    </div>
+</div>
+
+<div class="app-container">
+    <section class="insights-container">
+        <div class="header-actions-row">
+            <div class="summary-title-wrap">
+                <button id="performance-range-toggle" class="summary-title-btn" type="button">
+                    <span id="performance-title">Weekly</span> Summary
+                    <span class="summary-caret">▾</span>
+                </button>
+                <div id="performance-range-menu" class="summary-menu hidden">
+                    <button type="button" class="summary-menu-item" data-range="weekly">Weekly</button>
+                    <button type="button" class="summary-menu-item" data-range="last30">Last 30 Days</button>
+                    <button type="button" class="summary-menu-item" data-range="calendar">Calendar Month</button>
+                </div>
+            </div>
+            <div class="header-actions">
+                <input type="text" id="new-habit-name" placeholder="New habit name...">
+                <button type="button" id="create-habit" class="btn-primary">Create Habit</button>
+                <button type="button" id="share-weekly-card" class="btn-primary" style="background-color: #57606a;">Share Monthly Card</button>
+                <div class="theme-toggle-wrapper">
+                    <button id="theme-toggle" title="Toggle Light/Dark Mode">
+                        <span class="sun-icon">&#x2600;&#xFE0F;</span>
+                        <span class="moon-icon">&#x1F319;</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="habit-success-rates" class="insights-grid"></div>
+    </section>
+
+    <div class="dashboard-grid">
+        <div class="left-column">
+            <section class="card">
+                <h2 class="section-title">Habit Mastery</h2>
+                <nav id="habit-navigation" class="habit-nav"></nav>
+                <div id="hidden-habits" class="hidden-habits hidden"></div>
+                <div id="habit-grid-container" class="grid-wrapper"></div>
+            </section>
+
+            <section class="card">
+                <h2 class="section-title">Yearly Protein Activity</h2>
+                <div id="graph" class="grid-display"></div>
+            </section>
+
+            <section class="card">
+                <div class="header-actions-row" style="margin-bottom: 0.5rem;">
+                    <h2 class="section-title" style="margin:0;">Screen Time Trend</h2>
+                    <div class="header-actions">
+                        <input type="week" id="screen-week-picker" class="search-bar" style="width: auto; padding: 2px 8px; height: 24px;">
+                        <select id="screen-time-range" class="search-bar" style="width: auto; padding: 2px 8px; height: 24px;">
+                            <option value="7">7 Days</option>
+                            <option value="14" selected>14 Days</option>
+                            <option value="30">30 Days</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="screen-time-container" style="height: 180px; width: 100%; padding-top: 10px;">
+                    <svg id="screen-time-svg" style="width:100%; height:100%; overflow: visible;"></svg>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="header-actions-row">
+                    <h2 class="section-title">Weekly Snippets (Markdown)</h2>
+                    <div class="header-actions">
+                        <button id="toggle-snippet-collapse" class="btn-primary" style="background-color: #57606a;">Collapse</button>
+                        <input type="week" id="snippet-week-picker" class="search-bar" style="width: auto;">
+                        <button id="toggle-snippet-preview" class="btn-primary" style="background-color: #57606a;">Edit</button>
+                        <button id="save-snippet" class="btn-primary">Save Snippet</button>
+                    </div>
+                </div>
+                <div id="snippet-body">
+                    <div id="snippet-editor-container" class="hidden">
+                        <textarea id="snippet-input" placeholder="How was your week? Use **Markdown** here..." style="width: 100%; height: 180px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-family: monospace; resize: vertical;"></textarea>
+                    </div>
+                    <div id="snippet-preview-container" style="min-height: 180px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--subtle-bg); overflow-y: auto;"></div>
+                </div>
+            </section>
+        </div>
+
+        <aside class="right-column">
+            <section class="card protein-card">
+                <h2 class="section-title">Protein Intake</h2>
+                <input type="date" id="date" class="input-date">
+                <div class="protein-status-block">
+                    <div class="protein-header">
+                        <span class="current-total"><span id="protein-total-amount">0g</span></span>
+                        <span class="goal-text">/ 150g goal</span>
+                    </div>
+                    <div class="protein-meter">
+                        <svg class="protein-ring" width="140" height="140" viewBox="0 0 140 140" aria-hidden="true">
+                            <defs>
+                                <linearGradient id="protein-ring-gradient" x1="0" y1="0" x2="140" y2="140">
+                                    <stop offset="0%" stop-color="#22c55e"></stop>
+                                    <stop offset="50%" stop-color="#38bdf8"></stop>
+                                    <stop offset="100%" stop-color="#a855f7"></stop>
+                                </linearGradient>
+                            </defs>
+                            <circle class="protein-ring-bg" cx="70" cy="70" r="56"></circle>
+                            <circle id="protein-ring-progress" class="protein-ring-fg" cx="70" cy="70" r="56"></circle>
+                        </svg>
+                        <div class="protein-meter-center">
+                            <div id="protein-meter-percent" class="protein-meter-percent">0%</div>
+                            <div class="protein-meter-label">Goal</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-divider"></div>
+                <div class="food-controls">
+                    <input type="text" id="food-search" placeholder="Search/Add food..." class="search-bar">
+                    <div id="add-food-form" class="hidden">
+                        <input type="number" id="new-food-protein" placeholder="Grams" style="width: 90px;">
+                        <button id="save-new-food" class="btn-primary">Add</button>
+                    </div>
+                </div>
+                <div id="food-gallery" class="food-grid"></div>
+                <div class="selection-box">
+                    <h3 class="log-title">Log for Selected Date</h3>
+                    <ul id="selected-foods-list"></ul>
+                    <button type="button" id="submit" class="btn-success">Save Daily Entry</button>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2 class="section-title">Log Screen Time</h2>
+                <div style="display: flex; gap: 8px;">
+                    <input type="number" id="screen-hours" placeholder="Hrs" min="0">
+                    <input type="number" id="screen-minutes" placeholder="Min" min="0" max="59">
+                </div>
+                <button type="button" id="save-screen-time" class="btn-success" style="margin-top: 10px;">Save Screen Time</button>
+            </section>
+
+            <section class="card settings-card">
+                <h2 class="section-title">Data Management</h2>
+                <textarea id="import-json" placeholder="Paste JSON here to import..."></textarea>
+                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                    <button id="import-btn" class="btn-primary" style="flex: 1; margin-top: 0;">Import</button>
+                    <button id="export-btn" class="btn-primary" style="flex: 1; margin-top: 0; background-color: #57606a;">Export</button>
+                </div>
+                <div class="section-divider"></div>
+                <button id="clear-all-btn" class="btn-danger-outline" style="width:100%;">Clear All Data</button>
+            </section>
+        </aside>
+    </div>
+</div>
+<div id="toast-container"></div>
+<div id="custom-context-menu" class="hidden">
+    <div id="set-default-option" class="menu-option" style="color: var(--text-main); border-bottom: 1px solid var(--border);">Set as Default</div>
+    <div id="set-icon-option" class="menu-option" style="color: var(--text-main); border-bottom: 1px solid var(--border);">Set Icon</div>
+    <div id="hide-option" class="menu-option" style="color: var(--text-main); border-bottom: 1px solid var(--border);">Hide Habit</div>
+    <div id="delete-option" class="menu-option">Delete Habit</div>
+</div>
+<div id="emoji-picker" class="emoji-picker hidden"></div>
+<script src="script.js"></script>
+<script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+    }
+</script>
+</body>
+</html>

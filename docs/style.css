@@ -1,0 +1,143 @@
+:root {
+    --primary: #2da44e; --primary-hover: #2c974b; --bg: #ffffff; --subtle-bg: #f6f8fa;
+    --text-main: #1f2328; --text-muted: #636c76; --border: #d0d7de;
+    --card-bg: #ffffff;
+    --lvl-0: #ebedf0; --lvl-1: #9be9a8; --lvl-2: #40c463; --lvl-3: #30a14e; --lvl-4: #216e39;
+    --danger: #cf222e;
+    }
+    
+    [data-theme="dark"] {
+    --bg: #0d1117; --subtle-bg: #161b22;
+    --text-main: #c9d1d9; --text-muted: #8b949e; --border: #30363d;
+    --card-bg: #161b22;
+    --lvl-0: #21262d; --lvl-1: #0e4429; --lvl-2: #006d32; --lvl-3: #26a641; --lvl-4: #39d353;
+    }
+    
+    /* THEME TOGGLE STYLES - FIXED OVERLAP */
+    .theme-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    }
+    
+    #theme-toggle {
+    background: var(--subtle-bg);
+    border: 1px solid var(--border);
+    padding: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    width: 32px; /* Slightly smaller to match button height better */
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+    }
+    
+    #theme-toggle:hover { border-color: var(--primary); transform: scale(1.05); }
+    
+    /* Hide sun in light mode, hide moon in dark mode */
+    .moon-icon { display: none; }
+    [data-theme="dark"] .sun-icon { display: none; }
+    [data-theme="dark"] .moon-icon { display: block; }
+    
+    /* Rest of the CSS remains the same... */
+    * { box-sizing: border-box; }
+    body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background-color: var(--bg); color: var(--text-main); margin: 0; padding: 0; line-height: 1.5;
+    transition: background-color 0.3s, color 0.3s;
+    }
+    .app-container { max-width: 1200px; margin: 0 auto; padding: 1rem 2rem; }
+.header-actions-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.header-actions { display: flex; gap: 8px; align-items: center; }
+.summary-title-wrap { position: relative; display: inline-flex; align-items: center; }
+.summary-title-btn { background: transparent; border: none; padding: 0; font-size: 0.9rem; font-weight: 600; color: var(--text-main); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.summary-caret { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+.summary-menu { position: absolute; top: 28px; left: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 6px; min-width: 160px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); z-index: 1000; }
+.summary-menu-item { width: 100%; text-align: left; padding: 8px 10px; border: none; background: transparent; font-size: 13px; color: var(--text-main); border-radius: 6px; cursor: pointer; }
+.summary-menu-item:hover { background: var(--subtle-bg); }
+    .insights-container { margin-bottom: 0.5rem; }
+    .insights-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    
+    .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; }
+    .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 2px; }
+    .stat-main { display: flex; align-items: baseline; gap: 8px; }
+    .stat-value { font-size: 20px; font-weight: 700; color: var(--text-main); }
+    .stat-streak { font-size: 14px; font-weight: 600; color: var(--primary); }
+    .stat-pb { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-weight: 500; }
+    
+    .dashboard-grid { display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; margin-top: 0; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; margin-bottom: 1.5rem; }
+    .section-title { font-size: 0.9rem; font-weight: 600; margin-top: 0; margin-bottom: 1rem; }
+    
+    .grid-display, .habit-grid-instance { display: flex; flex-wrap: wrap; gap: 3px; user-select: none; }
+    .graph-day, .habit-day { width: 11px; height: 11px; border-radius: 2px; background-color: var(--lvl-0); cursor: pointer; outline: 1px solid rgba(27, 31, 35, 0.04); }
+    .level-1 { background-color: var(--lvl-1); } .level-2 { background-color: var(--lvl-2); }
+    .level-3 { background-color: var(--lvl-3); } .level-4 { background-color: var(--lvl-4); }
+    
+.habit-nav { display: flex; gap: 8px; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+.habit-nav-item { padding: 4px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; color: var(--text-muted); }
+.habit-nav-item.active { background: var(--subtle-bg); color: var(--text-main); font-weight: 600; }
+.hidden-habits { display: flex; gap: 6px; flex-wrap: wrap; margin: -6px 0 10px; font-size: 12px; color: var(--text-muted); }
+.hidden-habit-pill { padding: 2px 8px; border-radius: 999px; border: 1px dashed var(--border); background: var(--subtle-bg); cursor: pointer; }
+.hidden-habit-pill:hover { color: var(--text-main); border-color: var(--primary); }
+    
+.protein-status-block { margin-top: 1.25rem; margin-bottom: 1rem; }
+.protein-header { display: flex; align-items: baseline; gap: 4px; }
+#protein-total-amount { font-weight: 700; font-size: 24px; }
+.goal-text { font-size: 14px; color: var(--text-muted); }
+.protein-meter { margin-top: 12px; width: 100%; display: flex; justify-content: center; align-items: center; position: relative; }
+.protein-ring { display: block; transform: rotate(-90deg); }
+.protein-ring-bg { fill: none; stroke: #e2e8f0; stroke-width: 12; }
+.protein-ring-fg { fill: none; stroke: url(#protein-ring-gradient); stroke-width: 12; stroke-linecap: round; stroke-dasharray: 352; stroke-dashoffset: 352; transition: stroke-dashoffset 0.5s ease; }
+.protein-meter-center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; justify-content: center; width: 90px; height: 90px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border); }
+.protein-meter-percent { font-size: 20px; font-weight: 700; color: var(--text-main); }
+.protein-meter-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    
+    .section-divider { height: 1px; background-color: var(--border); margin: 1.25rem 0; }
+    .food-controls { margin-bottom: 1.25rem; display: flex; flex-direction: column; gap: 8px; }
+    .search-bar { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--subtle-bg); font-size: 14px; color: var(--text-main); }
+    
+    .food-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1.5rem; max-height: 240px; overflow-y: auto; }
+    .food-box { background: var(--subtle-bg); border: 1px solid var(--border); padding: 10px; border-radius: 6px; font-size: 12px; cursor: pointer; text-align: center; }
+    .food-box:hover { border-color: var(--primary); }
+    
+    .selection-box { background: transparent; border-top: 1px solid var(--border); padding-top: 1rem; }
+    #selected-foods-list { list-style: none; padding: 0; margin: 0 0 1rem 0; }
+    #selected-foods-list li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
+    
+    input[type="text"], input[type="date"], input[type="number"], textarea {
+    padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--subtle-bg); font-size: 13px; width: 100%; color: var(--text-main);
+    }
+    .btn-primary, .btn-success { background: var(--primary); color: white; border: 1px solid rgba(27,31,35,0.15); padding: 6px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+    .btn-success { width: 100%; }
+    
+    #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
+    .toast { background: #24292f; color: white; padding: 12px 20px; border-radius: 6px; font-size: 13px; margin-top: 8px; animation: slideIn 0.3s ease; }
+    @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    
+#custom-context-menu { position: absolute; background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px; z-index: 10000; }
+.menu-option { padding: 8px 16px; font-size: 13px; color: var(--danger); cursor: pointer; font-weight: 600; }
+.emoji-picker { position: absolute; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 8px; z-index: 10001; display: grid; grid-template-columns: repeat(6, 36px); gap: 6px; box-shadow: 0 12px 30px rgba(0,0,0,0.12); }
+.emoji-picker button { width: 36px; height: 36px; border-radius: 8px; border: 1px solid transparent; background: var(--subtle-bg); font-size: 18px; cursor: pointer; }
+.emoji-picker button:hover { border-color: var(--primary); background: #ffffff; }
+.emoji-picker-custom { grid-column: 1 / -1; display: flex; gap: 6px; margin-top: 4px; }
+.emoji-picker-custom input { flex: 1; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--subtle-bg); font-size: 14px; }
+.emoji-picker-custom button { width: auto; padding: 0 10px; font-size: 12px; font-weight: 600; }
+.habit-emoji { margin-right: 6px; }
+    .btn-danger-outline { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 6px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 10px; width: 100%; }
+    .hidden { display: none !important; }
+    
+    .splash-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 20000; display: flex; justify-content: center; align-items: center; text-align: center; }
+    .splash-content { max-width: 400px; padding: 2rem; }
+    .splash-icon { font-size: 64px; margin-bottom: 1rem; }
+    
+#snippet-preview-container h1,
+#snippet-preview-container h2,
+#snippet-preview-container h3 { margin-top: 0.8rem; margin-bottom: 0.2rem; color: var(--text-main); }
+#snippet-preview-container p, #snippet-preview-container span { margin: 0; display: inline; color: var(--text-main); }
+#snippet-preview-container li { margin-left: 20px; list-style-type: disc; margin-bottom: 0.1rem; color: var(--text-main); }
+#snippet-preview-container br { content: ""; display: block; margin-bottom: 0.2rem; }
+.collapsed { display: none !important; }
