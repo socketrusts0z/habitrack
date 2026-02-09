@@ -78,6 +78,12 @@ body {
     .level-3 { background-color: var(--lvl-3); } .level-4 { background-color: var(--lvl-4); }
     
 .habit-nav { display: flex; gap: 8px; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; min-width: 0; flex-wrap: wrap; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.habit-swipe { position: relative; display: inline-flex; align-items: center; }
+.habit-swipe-actions { position: absolute; right: -150px; top: 0; height: 100%; display: flex; gap: 6px; align-items: center; opacity: 0; pointer-events: none; }
+.habit-swipe-actions .action-btn { background: var(--subtle-bg); border: 1px solid var(--border); padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; }
+.habit-swipe-actions .action-btn.danger { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+.habit-swipe.swiped { transform: translateX(-150px); transition: transform 0.15s ease; }
+.habit-swipe.swiped .habit-swipe-actions { opacity: 1; pointer-events: auto; }
 .habit-nav-item { padding: 4px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; color: var(--text-muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none; }
 .habit-nav-item .habit-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; max-width: 180px; vertical-align: bottom; }
 .habit-nav-item * { -webkit-user-select: none; user-select: none; }
@@ -183,6 +189,10 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
     .habit-nav-item .habit-name { max-width: 140px; }
     #theme-toggle { width: 44px; height: 44px; font-size: 18px; }
     #custom-context-menu { font-size: 14px; }
+    .habit-swipe { width: 100%; }
+    .habit-nav-item { width: 100%; }
+    .habit-swipe-actions { right: -170px; }
+    .habit-swipe.swiped { transform: translateX(-170px); }
     .settings-card .section-divider { margin: 1rem 0; }
     .settings-card [style*="display: flex"] { flex-direction: column !important; }
     .settings-card [style*="display: flex"] > * { width: 100% !important; }

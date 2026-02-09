@@ -104,6 +104,9 @@ function setupEventListeners() {
     document.addEventListener('click', (e) => {
         if (!el('custom-context-menu').contains(e.target)) el('custom-context-menu').classList.add('hidden');
         if (!el('emoji-picker').contains(e.target)) el('emoji-picker').classList.add('hidden');
+        document.querySelectorAll('.habit-swipe.swiped').forEach(w => {
+            if (!e.target.closest('.habit-swipe')) w.classList.remove('swiped');
+        });
     });
 
     el('date')?.addEventListener('change', refreshDashboard);
@@ -603,17 +606,36 @@ async function renderHabitTrackers() {
     if (!habits.length) return;
     nav.innerHTML = '';
     visibleHabits.forEach(h => {
+        const wrap = document.createElement('div'); wrap.className = 'habit-swipe'; wrap.dataset.habit = h;
         const btn = document.createElement('div'); btn.className = 'habit-nav-item'; btn.dataset.habit = h;
         const emoji = icons[h] ? `<span class="habit-emoji">${icons[h]}</span>` : '';
         btn.innerHTML = `${emoji}<span class="habit-name">${h}</span>`;
         btn.onclick = () => showHabitGrid(h);
-        btn.oncontextmenu = (e) => {
-            e.preventDefault(); habitToDelete = h;
-            el('custom-context-menu').style.cssText = `top:${e.clientY}px;left:${e.clientX}px;`;
-            el('custom-context-menu').classList.remove('hidden');
+
+        const actions = document.createElement('div'); actions.className = 'habit-swipe-actions';
+        const actIcon = document.createElement('button'); actIcon.type = 'button'; actIcon.textContent = 'Icon';
+        const actHide = document.createElement('button'); actHide.type = 'button'; actHide.textContent = 'Hide';
+        const actDel = document.createElement('button'); actDel.type = 'button'; actDel.textContent = 'Delete';
+        actIcon.className = 'action-btn';
+        actHide.className = 'action-btn';
+        actDel.className = 'action-btn danger';
+        actIcon.onclick = (e) => {
+            e.stopPropagation();
+            habitToDelete = h;
+            const picker = el('emoji-picker');
+            const r = wrap.getBoundingClientRect();
+            picker.style.cssText = `top:${r.bottom + window.scrollY + 6}px;left:${r.left + window.scrollX}px;`;
+            renderEmojiPicker(h);
+            picker.classList.remove('hidden');
         };
-        attachHabitLongPress(btn, h);
-        nav.appendChild(btn);
+        actHide.onclick = async (e) => { e.stopPropagation(); habitToDelete = h; await el('hide-option').onclick(); };
+        actDel.onclick = async (e) => { e.stopPropagation(); habitToDelete = h; await el('delete-option').onclick(); };
+        actions.appendChild(actIcon); actions.appendChild(actHide); actions.appendChild(actDel);
+
+        wrap.appendChild(btn);
+        wrap.appendChild(actions);
+        attachHabitSwipe(wrap);
+        nav.appendChild(wrap);
         if (!el(`habit-${h}`)) {
             const g = document.createElement('div'); g.id = `habit-${h}`; g.className = 'habit-grid-instance hidden';
             cont.appendChild(g);
@@ -723,6 +745,56 @@ function showHabitGrid(name) {
     activeHabitName = name;
     document.querySelectorAll('.habit-grid-instance').forEach(g => g.classList.toggle('hidden', g.id !== `habit-${name}`));
     document.querySelectorAll('.habit-nav-item').forEach(i => i.classList.toggle('active', i.dataset.habit === name));
+}
+
+function attachHabitSwipe(wrap) {
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let dragging = false;
+    const threshold = 40;
+    const maxShift = 150;
+
+    const onStart = (e) => {
+        if (e.touches && e.touches.length > 1) return;
+        dragging = true;
+        const t = e.touches ? e.touches[0] : e;
+        startX = t.clientX;
+        startY = t.clientY;
+        currentX = 0;
+    };
+
+    const onMove = (e) => {
+        if (!dragging) return;
+        const t = e.touches ? e.touches[0] : e;
+        const dx = t.clientX - startX;
+        const dy = t.clientY - startY;
+        if (Math.abs(dx) > Math.abs(dy)) {
+            if (e.cancelable) e.preventDefault();
+            currentX = dx;
+            if (dx < 0) {
+                wrap.style.transform = `translateX(${Math.max(dx, -maxShift)}px)`;
+            }
+        }
+    };
+
+    const onEnd = () => {
+        if (!dragging) return;
+        dragging = false;
+        if (currentX < -threshold) {
+            wrap.classList.add('swiped');
+        } else if (currentX > threshold) {
+            wrap.classList.remove('swiped');
+        } else if (!wrap.classList.contains('swiped')) {
+            wrap.classList.remove('swiped');
+        }
+        wrap.style.transform = '';
+    };
+
+    wrap.addEventListener('touchstart', onStart, { passive: true });
+    wrap.addEventListener('touchmove', onMove, { passive: false });
+    wrap.addEventListener('touchend', onEnd);
+    wrap.addEventListener('touchcancel', onEnd);
 }
 
 function attachHabitLongPress(elm, habitName) {
