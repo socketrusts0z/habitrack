@@ -88,7 +88,7 @@ body {
     .stat-pb { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-weight: 500; }
     
 .dashboard-grid { display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; margin-top: 0; min-width: 0; }
-.right-column { min-width: 0; width: 100%; }
+.right-column { min-width: 0; }
 .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem; margin-bottom: 1.25rem; min-width: 0; }
 .section-title { font-size: 1rem; font-weight: 700; margin-top: 0; margin-bottom: 0.9rem; }
     
@@ -195,7 +195,7 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
     .card { padding: 1rem; border-radius: 14px; }
     .section-title { font-size: 1.1rem; }
     .header-actions-row { gap: 12px; }
-    .header-actions { width: 100%; flex-direction: row; align-items: center; gap: 12px; flex-wrap: nowrap; }
+    .header-actions { width: 100%; flex-direction: row; align-items: center; gap: 12px; flex-wrap: nowrap; justify-content: space-between; }
     .header-actions > * { width: auto; }
     .habit-create { flex: 0 0 auto; }
     .habit-create-panel { width: min(100vw - 2.5rem, 360px); }
