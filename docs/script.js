@@ -612,6 +612,7 @@ async function renderHabitTrackers() {
             el('custom-context-menu').style.cssText = `top:${e.clientY}px;left:${e.clientX}px;`;
             el('custom-context-menu').classList.remove('hidden');
         };
+        attachHabitLongPress(btn, h);
         nav.appendChild(btn);
         if (!el(`habit-${h}`)) {
             const g = document.createElement('div'); g.id = `habit-${h}`; g.className = 'habit-grid-instance hidden';
@@ -722,6 +723,26 @@ function showHabitGrid(name) {
     activeHabitName = name;
     document.querySelectorAll('.habit-grid-instance').forEach(g => g.classList.toggle('hidden', g.id !== `habit-${name}`));
     document.querySelectorAll('.habit-nav-item').forEach(i => i.classList.toggle('active', i.dataset.habit === name));
+}
+
+function attachHabitLongPress(elm, habitName) {
+    let timer = null;
+    const start = (e) => {
+        if (e.touches && e.touches.length > 1) return;
+        timer = setTimeout(() => {
+            habitToDelete = habitName;
+            const t = e.touches ? e.touches[0] : e;
+            el('custom-context-menu').style.cssText = `top:${t.clientY}px;left:${t.clientX}px;`;
+            el('custom-context-menu').classList.remove('hidden');
+        }, 550);
+    };
+    const cancel = () => {
+        if (timer) { clearTimeout(timer); timer = null; }
+    };
+    elm.addEventListener('touchstart', start, { passive: true });
+    elm.addEventListener('touchend', cancel);
+    elm.addEventListener('touchcancel', cancel);
+    elm.addEventListener('touchmove', cancel);
 }
 
 function showToast(m) {
