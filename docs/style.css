@@ -217,11 +217,14 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
     .protein-meter { transform: scale(0.95); }
     .grid-display, .habit-grid-instance {
         --day-gap: 1px;
-        --day-size: calc((100% - (52 * var(--day-gap))) / 53);
+        --day-size: 11px;
         display: grid;
         grid-template-columns: repeat(53, var(--day-size));
         grid-auto-rows: var(--day-size);
         gap: var(--day-gap);
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
     }
     .graph-day, .habit-day { width: var(--day-size); height: var(--day-size); }
     .summary-menu { min-width: 190px; }
