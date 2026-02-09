@@ -731,6 +731,7 @@ function attachHabitLongPress(elm, habitName) {
     const start = (e) => {
         if (e.touches && e.touches.length > 1) return;
         if (e.cancelable) e.preventDefault();
+        e.stopPropagation();
         fired = false;
         timer = setTimeout(() => {
             fired = true;
@@ -747,6 +748,7 @@ function attachHabitLongPress(elm, habitName) {
     elm.addEventListener('touchend', (e) => {
         if (fired) {
             if (e.cancelable) e.preventDefault();
+            e.stopPropagation();
         } else {
             elm.click();
         }
@@ -755,6 +757,15 @@ function attachHabitLongPress(elm, habitName) {
     elm.addEventListener('touchcancel', cancel);
     elm.addEventListener('touchmove', cancel);
     elm.addEventListener('contextmenu', (e) => e.preventDefault());
+    elm.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'touch') start(e);
+    });
+    elm.addEventListener('pointerup', (e) => {
+        if (e.pointerType === 'touch') {
+            if (fired && e.cancelable) e.preventDefault();
+            cancel();
+        }
+    });
 }
 
 function showToast(m) {
