@@ -819,8 +819,6 @@ function attachHabitLongPress(elm, habitName) {
     let fired = false;
     const start = (e) => {
         if (e.touches && e.touches.length > 1) return;
-        if (e.cancelable) e.preventDefault();
-        e.stopPropagation();
         fired = false;
         timer = setTimeout(() => {
             fired = true;
@@ -837,8 +835,6 @@ function attachHabitLongPress(elm, habitName) {
         if (fired) {
             if (e.cancelable) e.preventDefault();
             e.stopPropagation();
-        } else {
-            elm.click();
         }
         cancel();
     });
@@ -849,15 +845,6 @@ function attachHabitLongPress(elm, habitName) {
         if (isTouchDevice) return;
         habitToDelete = habitName;
         openHabitMenuAt(e.clientX, e.clientY);
-    });
-    elm.addEventListener('pointerdown', (e) => {
-        if (e.pointerType === 'touch') start(e);
-    });
-    elm.addEventListener('pointerup', (e) => {
-        if (e.pointerType === 'touch') {
-            if (fired && e.cancelable) e.preventDefault();
-            cancel();
-        }
     });
 }
 

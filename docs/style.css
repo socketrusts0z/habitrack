@@ -120,7 +120,9 @@ body {
 input[type="text"], input[type="date"], input[type="number"], textarea {
     padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
     background: var(--subtle-bg); font-size: 15px; width: 100%; color: var(--text-main);
+    box-sizing: border-box;
     }
+.input-date { -webkit-appearance: none; appearance: none; }
 .input-date { width: 100%; max-width: 100%; min-width: 0; display: block; box-sizing: border-box; }
 .protein-card { max-width: 100%; min-width: 0; width: 100%; overflow: hidden; }
 .protein-card .input-date { width: 100%; max-width: 100%; display: block; box-sizing: border-box; }
