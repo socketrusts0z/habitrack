@@ -61,24 +61,6 @@ const getHabitIcons = async () => {
     return icons && !Array.isArray(icons) ? icons : {};
 };
 
-function syncGridSizing() {
-    const isMobile = window.matchMedia('(max-width: 600px)').matches;
-    const grids = document.querySelectorAll('.grid-display, .habit-grid-instance');
-    grids.forEach((grid) => {
-        if (!isMobile) {
-            grid.style.removeProperty('--day-size');
-            return;
-        }
-        const styles = getComputedStyle(grid);
-        const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
-        const width = grid.clientWidth;
-        if (!width) return;
-        const cols = 53;
-        const size = Math.floor((width - (cols - 1) * gap) / cols);
-        if (size > 0) grid.style.setProperty('--day-size', `${size}px`);
-    });
-}
-
 document.addEventListener("DOMContentLoaded", async () => {
     if (await getData('theme_preference') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
     if (el('date')) el('date').value = getLocalDateString();
@@ -111,7 +93,6 @@ async function refreshDashboard() {
     await loadDailySelections(el('date').value);
     await renderGraph();
     await renderHabitTrackers();
-    syncGridSizing();
     await updateWeeklyInsights();
     await renderScreenTimeChart();
     await loadSnippet();
@@ -138,12 +119,6 @@ function setupEventListeners() {
         el('performance-range-menu')?.classList.add('hidden');
     });
 
-    window.addEventListener('resize', () => {
-        syncGridSizing();
-    });
-    window.addEventListener('orientationchange', () => {
-        syncGridSizing();
-    });
     document.querySelectorAll('.summary-menu-item').forEach(b => {
         b.onclick = async (e) => {
             e.stopPropagation();
@@ -679,7 +654,6 @@ async function renderGraph() {
         day.onclick = () => { el('date').value = s; refreshDashboard(); };
         g.appendChild(day);
     }
-    syncGridSizing();
 }
 
 async function renderHabitTrackers() {
@@ -773,7 +747,6 @@ async function renderHabitGraph(name) {
         }
         day.className = `habit-day ${done ? 'level-3' : 'level-0'}`; day.title = s;
     }
-    syncGridSizing();
 }
 
 async function renderFoods() {
@@ -828,7 +801,6 @@ function showHabitGrid(name) {
     setData('default_habit', name);
     document.querySelectorAll('.habit-grid-instance').forEach(g => g.classList.toggle('hidden', g.id !== `habit-${name}`));
     document.querySelectorAll('.habit-nav-item').forEach(i => i.classList.toggle('active', i.dataset.habit === name));
-    syncGridSizing();
 }
 
 function openHabitMenuAt(clientX, clientY) {
