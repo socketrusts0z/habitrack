@@ -42,14 +42,15 @@
     [data-theme="dark"] .moon-icon { display: block; }
     
     /* Rest of the CSS remains the same... */
-    * { box-sizing: border-box; }
+* { box-sizing: border-box; }
+html, body { width: 100%; overflow-x: hidden; }
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     background-color: var(--bg); color: var(--text-main); margin: 0; padding: 0; line-height: 1.6;
     font-size: 16px;
     transition: background-color 0.3s, color 0.3s;
     }
-.app-container { max-width: 1200px; margin: 0 auto; padding: 1.25rem 2rem; width: 100%; }
+.app-container { max-width: 1200px; margin: 0 auto; padding: 1.25rem calc(2rem + env(safe-area-inset-right)) 1.25rem calc(2rem + env(safe-area-inset-left)); width: 100%; }
 .header-actions-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
 .header-actions { display: flex; gap: 10px; align-items: center; min-width: 0; }
 .theme-toggle-wrapper { flex-shrink: 0; }
@@ -179,7 +180,7 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
 .collapsed { display: none !important; }
 
 @media (max-width: 980px) {
-    .app-container { padding: 1rem; }
+    .app-container { padding: 1rem calc(1rem + env(safe-area-inset-right)) 1rem calc(1rem + env(safe-area-inset-left)); }
     .dashboard-grid { grid-template-columns: 1fr; }
     .right-column { order: 1; }
     .left-column { order: 0; }
@@ -191,7 +192,7 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
 
 @media (max-width: 600px) {
     body { font-size: 17px; }
-    .app-container { padding: 0.75rem; }
+    .app-container { padding: 0.75rem calc(0.75rem + env(safe-area-inset-right)) 0.75rem calc(0.75rem + env(safe-area-inset-left)); }
     .card { padding: 1rem; border-radius: 14px; }
     .section-title { font-size: 1.1rem; }
     .header-actions-row { gap: 12px; }
