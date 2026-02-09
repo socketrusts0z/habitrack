@@ -727,9 +727,13 @@ function showHabitGrid(name) {
 
 function attachHabitLongPress(elm, habitName) {
     let timer = null;
+    let fired = false;
     const start = (e) => {
         if (e.touches && e.touches.length > 1) return;
+        if (e.cancelable) e.preventDefault();
+        fired = false;
         timer = setTimeout(() => {
+            fired = true;
             habitToDelete = habitName;
             const t = e.touches ? e.touches[0] : e;
             el('custom-context-menu').style.cssText = `top:${t.clientY}px;left:${t.clientX}px;`;
@@ -739,10 +743,18 @@ function attachHabitLongPress(elm, habitName) {
     const cancel = () => {
         if (timer) { clearTimeout(timer); timer = null; }
     };
-    elm.addEventListener('touchstart', start, { passive: true });
-    elm.addEventListener('touchend', cancel);
+    elm.addEventListener('touchstart', start, { passive: false });
+    elm.addEventListener('touchend', (e) => {
+        if (fired) {
+            if (e.cancelable) e.preventDefault();
+        } else {
+            elm.click();
+        }
+        cancel();
+    });
     elm.addEventListener('touchcancel', cancel);
     elm.addEventListener('touchmove', cancel);
+    elm.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
 function showToast(m) {
