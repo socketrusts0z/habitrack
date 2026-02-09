@@ -57,9 +57,6 @@
             <section class="card">
                 <div class="header-actions-row" style="margin-bottom: 0.5rem;">
                     <h2 class="section-title" style="margin:0;">Habit Mastery</h2>
-                    <div class="header-actions">
-                        <button id="habit-manage-toggle" class="btn-primary" style="background-color: #57606a;">Manage</button>
-                    </div>
                 </div>
                 <nav id="habit-navigation" class="habit-nav"></nav>
                 <div id="hidden-habits" class="hidden-habits hidden"></div>
@@ -162,9 +159,10 @@
             <section class="card settings-card">
                 <h2 class="section-title">Data Management</h2>
                 <textarea id="import-json" placeholder="Paste JSON here to import..."></textarea>
+                <input id="import-file" type="file" accept="application/json" class="file-input-hidden">
                 <div style="display: flex; gap: 8px; margin-top: 8px;">
-                    <button id="import-btn" class="btn-primary" style="flex: 1; margin-top: 0;">Import</button>
-                    <button id="export-btn" class="btn-primary" style="flex: 1; margin-top: 0; background-color: #57606a;">Export</button>
+                    <button id="import-btn" type="button" class="btn-primary" style="flex: 1; margin-top: 0;">Import</button>
+                    <button id="export-btn" type="button" class="btn-primary" style="flex: 1; margin-top: 0; background-color: #57606a;">Export</button>
                 </div>
                 <div class="section-divider"></div>
                 <button id="clear-all-btn" class="btn-danger-outline" style="width:100%;">Clear All Data</button>

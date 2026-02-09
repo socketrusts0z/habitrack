@@ -51,7 +51,7 @@ body {
     }
 .app-container { max-width: 1200px; margin: 0 auto; padding: 1.25rem 2rem; width: 100%; }
 .header-actions-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-.header-actions { display: flex; gap: 8px; align-items: center; }
+.header-actions { display: flex; gap: 10px; align-items: center; }
 .summary-title-wrap { position: relative; display: inline-flex; align-items: center; }
 .summary-title-btn { background: transparent; border: none; padding: 0; font-size: 0.9rem; font-weight: 600; color: var(--text-main); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
 .summary-caret { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
@@ -78,12 +78,10 @@ body {
     .level-3 { background-color: var(--lvl-3); } .level-4 { background-color: var(--lvl-4); }
     
 .habit-nav { display: flex; gap: 8px; margin-bottom: 0.6rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; min-width: 0; flex-wrap: wrap; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-.habit-item-wrap { display: inline-flex; flex-direction: column; gap: 6px; }
-.habit-mini-actions { display: inline-flex; gap: 6px; height: 26px; visibility: hidden; }
-.habit-nav.manage-mode .habit-mini-actions { visibility: visible; }
-.habit-mini-actions .action-btn { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border); background: var(--subtle-bg); font-size: 16px; line-height: 24px; font-weight: 700; padding: 0; }
-.habit-mini-actions .action-btn.hide { color: #b91c1c; }
-.habit-mini-actions .action-btn.default { color: #0f766e; }
+.habit-item-wrap { display: inline-flex; align-items: center; gap: 6px; position: relative; }
+.habit-mini-actions { display: inline-flex; gap: 6px; height: auto; visibility: visible; }
+.habit-mini-actions .action-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: var(--subtle-bg); font-size: 18px; line-height: 26px; font-weight: 700; padding: 0; }
+.habit-mini-actions .action-btn.menu { color: var(--text-muted); }
 
 #habit-manage-toggle { padding: 6px 10px; font-size: 13px; border-radius: 8px; }
 .habit-nav-item { position: relative; padding: 4px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; color: var(--text-muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
@@ -142,8 +140,9 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
 .emoji-picker-custom input { flex: 1; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--subtle-bg); font-size: 14px; }
 .emoji-picker-custom button { width: auto; padding: 0 10px; font-size: 12px; font-weight: 600; }
 .habit-emoji { margin-right: 6px; }
-    .btn-danger-outline { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 6px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 10px; width: 100%; }
-    .hidden { display: none !important; }
+.btn-danger-outline { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 6px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 10px; width: 100%; }
+.hidden { display: none !important; }
+.file-input-hidden { position: fixed; width: 1px; height: 1px; opacity: 0; left: -9999px; top: -9999px; }
     
     .splash-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 20000; display: flex; justify-content: center; align-items: center; text-align: center; }
     .splash-content { max-width: 400px; padding: 2rem; }
@@ -174,7 +173,7 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
     .card { padding: 1rem; border-radius: 14px; }
     .section-title { font-size: 1.1rem; }
     .header-actions-row { gap: 12px; }
-    .header-actions { width: 100%; flex-direction: column; align-items: stretch; }
+    .header-actions { width: 100%; flex-direction: column; align-items: stretch; gap: 12px; }
     .header-actions > * { width: 100%; }
     #habit-manage-toggle { width: auto; align-self: flex-end; }
     .summary-title-btn { font-size: 1.05rem; }
@@ -193,8 +192,10 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
     .btn-primary, .btn-success { padding: 12px 16px; font-size: 15px; }
     input[type="text"], input[type="date"], input[type="number"], textarea { font-size: 16px; }
     .habit-nav { gap: 6px; padding-bottom: 4px; }
+    .habit-item-wrap { gap: 4px; }
     .habit-nav-item { padding: 10px 12px; font-size: 14px; max-width: 180px; }
     .habit-nav-item .habit-name { max-width: 140px; }
+    .habit-mini-actions .action-btn { width: 32px; height: 32px; font-size: 20px; line-height: 30px; }
     #theme-toggle { width: 44px; height: 44px; font-size: 18px; }
     #custom-context-menu { font-size: 14px; }
     .settings-card .section-divider { margin: 1rem 0; }

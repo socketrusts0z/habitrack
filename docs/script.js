@@ -1,5 +1,4 @@
 let selectedFoods = {}, habitToDelete = null, activeHabitName = null;
-let habitManageMode = false;
 const EMOJI_OPTIONS = ['💧','🏃','🧘','📖','🥗','😴','🏋️','🧠','📝','🧹','🧑‍💻','🦷','🍵','🚶','🎧','🪴','🎯','🛌','🧴','🧊','🚰','🍎','🌞','🧘‍♂️','🧘‍♀️','🧠'];
 const DEFAULT_FOODS = [{ id: 101, name: 'Egg', protein_per_serving: 6 }, { id: 102, name: 'Whey Protein', protein_per_serving: 25 }];
 const el = (id) => document.getElementById(id);
@@ -172,11 +171,6 @@ function setupEventListeners() {
             toggleSnippet(false);
         }
     };
-    el('habit-manage-toggle').onclick = () => {
-        habitManageMode = !habitManageMode;
-        el('habit-manage-toggle').textContent = habitManageMode ? 'Done' : 'Manage';
-        renderHabitTrackers();
-    };
     el('toggle-snippet-collapse').onclick = async () => {
         const body = el('snippet-body');
         const isCollapsed = body.classList.toggle('collapsed');
@@ -261,19 +255,55 @@ function setupEventListeners() {
         }
     };
 
+    const runImport = async (text) => {
+        try {
+            const parsed = JSON.parse(text);
+            await setAllData(parsed);
+            showToast('Imported');
+            setTimeout(() => location.reload(), 400);
+        } catch {
+            alert("Invalid JSON");
+        }
+    };
+
     el('import-btn').onclick = async () => {
-        try { await setAllData(JSON.parse(el('import-json').value)); location.reload(); } catch { alert("Invalid JSON"); }
+        const text = el('import-json').value.trim();
+        if (text) return runImport(text);
+        el('import-file').click();
+    };
+
+    el('import-file').onchange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const text = await file.text();
+        runImport(text);
+        e.target.value = '';
     };
 
     el('export-btn').onclick = async () => {
         const data = await getAllData();
         const filename = `backup-${getLocalDateString()}.json`;
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const text = JSON.stringify(data, null, 2);
+        const blob = new Blob([text], { type: 'application/json' });
+        el('import-json').value = text;
+        showToast('Export ready (copied below)');
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        // iOS Safari often blocks downloads; try share, then clipboard, then download
         if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'application/json' })] }) && navigator.share) {
             try {
                 await navigator.share({ files: [new File([blob], filename, { type: 'application/json' })], title: filename });
                 return;
             } catch {}
+        }
+        if (navigator.clipboard?.writeText) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast('Export copied to clipboard');
+            } catch {}
+        }
+        if (isSafari) {
+            prompt('Copy your export JSON below:', text);
+            return;
         }
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -627,20 +657,10 @@ async function renderHabitTrackers() {
         const emoji = icons[h] ? `<span class="habit-emoji">${icons[h]}</span>` : '';
         btn.innerHTML = `${emoji}<span class="habit-name">${h}</span>`;
         btn.onclick = () => showHabitGrid(h);
-
-        const actions = document.createElement('div'); actions.className = 'habit-mini-actions';
-        const actHide = document.createElement('button'); actHide.type = 'button'; actHide.textContent = '−';
-        const actDefault = document.createElement('button'); actDefault.type = 'button'; actDefault.textContent = '+';
-        actHide.className = 'action-btn hide';
-        actDefault.className = 'action-btn default';
-        actHide.title = 'Hide Habit';
-        actDefault.title = 'Set as Default';
-        actHide.onclick = async (e) => { e.stopPropagation(); await hideHabit(h); };
-        actDefault.onclick = async (e) => { e.stopPropagation(); await setDefaultHabit(h); };
-        actions.appendChild(actHide); actions.appendChild(actDefault);
+        btn.title = 'Long-press or right-click to manage';
+        attachHabitLongPress(btn, h);
 
         wrap.appendChild(btn);
-        wrap.appendChild(actions);
         nav.appendChild(wrap);
         if (!el(`habit-${h}`)) {
             const g = document.createElement('div'); g.id = `habit-${h}`; g.className = 'habit-grid-instance hidden';
@@ -676,7 +696,6 @@ async function renderHabitTrackers() {
         activeHabitName = null;
         return;
     }
-    nav.classList.toggle('manage-mode', habitManageMode);
     showHabitGrid(activeHabitName && visibleHabits.includes(activeHabitName) ? activeHabitName : (visibleHabits.includes(def) ? def : visibleHabits[0]));
 }
 
@@ -766,8 +785,22 @@ async function loadDailySelections(date) {
 
 function showHabitGrid(name) {
     activeHabitName = name;
+    setData('default_habit', name);
     document.querySelectorAll('.habit-grid-instance').forEach(g => g.classList.toggle('hidden', g.id !== `habit-${name}`));
     document.querySelectorAll('.habit-nav-item').forEach(i => i.classList.toggle('active', i.dataset.habit === name));
+}
+
+function openHabitMenuAt(clientX, clientY) {
+    const menu = el('custom-context-menu');
+    menu.classList.remove('hidden');
+    const menuRect = menu.getBoundingClientRect();
+    let left = clientX + window.scrollX;
+    const maxLeft = window.scrollX + window.innerWidth - menuRect.width - 8;
+    if (left > maxLeft) left = maxLeft;
+    let top = clientY + window.scrollY;
+    const maxTop = window.scrollY + window.innerHeight - menuRect.height - 8;
+    if (top > maxTop) top = clientY + window.scrollY - menuRect.height - 8;
+    menu.style.cssText = `top:${Math.max(top, 8 + window.scrollY)}px;left:${Math.max(left, 8 + window.scrollX)}px;`;
 }
 
 function attachHabitLongPress(elm, habitName) {
@@ -782,8 +815,7 @@ function attachHabitLongPress(elm, habitName) {
             fired = true;
             habitToDelete = habitName;
             const t = e.touches ? e.touches[0] : e;
-            el('custom-context-menu').style.cssText = `top:${t.clientY}px;left:${t.clientX}px;`;
-            el('custom-context-menu').classList.remove('hidden');
+            openHabitMenuAt(t.clientX, t.clientY);
         }, 550);
     };
     const cancel = () => {
@@ -801,7 +833,11 @@ function attachHabitLongPress(elm, habitName) {
     });
     elm.addEventListener('touchcancel', cancel);
     elm.addEventListener('touchmove', cancel);
-    elm.addEventListener('contextmenu', (e) => e.preventDefault());
+    elm.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        habitToDelete = habitName;
+        openHabitMenuAt(e.clientX, e.clientY);
+    });
     elm.addEventListener('pointerdown', (e) => {
         if (e.pointerType === 'touch') start(e);
     });
