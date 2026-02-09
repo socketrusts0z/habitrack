@@ -61,6 +61,10 @@ const getHabitIcons = async () => {
     return icons && !Array.isArray(icons) ? icons : {};
 };
 
+function getGridDayCount() {
+    return window.matchMedia('(max-width: 600px)').matches ? 182 : 365;
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     if (await getData('theme_preference') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
     if (el('date')) el('date').value = getLocalDateString();
@@ -646,7 +650,8 @@ function updateStatCard(cont, title, val, streak = 0, pb = 0, displayTitle = nul
 async function renderGraph() {
     const data = await getData('protein_intake'), g = el('graph');
     if (!g) return; g.innerHTML = '';
-    for (let i = 365; i >= 0; i--) {
+    const days = getGridDayCount();
+    for (let i = days; i >= 0; i--) {
         const d = new Date(); d.setDate(d.getDate() - i);
         const s = getLocalDateString(d), v = data.find(x => x.date === s)?.protein_grams || 0;
         const lvl = v === 0 ? 0 : v < 50 ? 1 : v < 100 ? 2 : v < 150 ? 3 : 4;
@@ -732,10 +737,11 @@ async function renderHabitGraph(name) {
     const hist = await getData('habit_history'), g = el(`habit-${name}`);
     if (!g) return;
     const isNew = g.children.length === 0;
-    for (let i = 365; i >= 0; i--) {
+    const days = getGridDayCount();
+    for (let i = days; i >= 0; i--) {
         const d = new Date(); d.setDate(d.getDate() - i);
         const s = getLocalDateString(d), done = hist.find(x => x.habit_name === name && x.date === s)?.performed;
-        let day = isNew ? document.createElement('div') : g.children[365 - i];
+        let day = isNew ? document.createElement('div') : g.children[days - i];
         if (isNew) {
             day.onclick = async () => {
                 let h = await getData('habit_history');

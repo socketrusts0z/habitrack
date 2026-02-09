@@ -238,4 +238,7 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
     .settings-card .section-divider { margin: 1rem 0; }
     .settings-card [style*="display: flex"] { flex-direction: column !important; }
     .settings-card [style*="display: flex"] > * { width: 100% !important; }
+    .snippet-actions { flex-wrap: wrap; width: 100%; gap: 8px; justify-content: flex-start; }
+    .snippet-actions > * { flex: 1 1 140px; min-width: 140px; }
+    .snippet-actions .btn-primary { width: 100%; }
 }
