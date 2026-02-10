@@ -229,16 +229,17 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
     .stat-pb { font-size: 12px; }
     .food-grid { grid-template-columns: 1fr; max-height: 220px; }
     .protein-meter { transform: scale(0.95); }
-    .grid-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .grid-wrapper { overflow: hidden; }
     .grid-display, .habit-grid-instance {
-        --day-size: 12px;
+        --day-size: 10px;
         --day-gap: 2px;
         display: grid;
-        grid-template-columns: repeat(53, var(--day-size));
+        grid-auto-flow: column;
+        grid-auto-columns: var(--day-size);
+        grid-template-rows: repeat(7, var(--day-size));
         gap: var(--day-gap);
-        width: max-content;
-        max-width: none;
-        overflow: visible;
+        width: 100%;
+        max-width: 100%;
     }
     .graph-day, .habit-day { width: var(--day-size); height: var(--day-size); }
     .summary-menu { min-width: 190px; }
@@ -256,5 +257,5 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
     .settings-card [style*="display: flex"] > * { width: 100% !important; }
     .snippet-actions { flex-wrap: wrap; width: 100%; gap: 8px; justify-content: flex-start; }
     .snippet-actions > * { flex: 1 1 120px; min-width: 120px; }
-    .snippet-actions .btn-primary { width: 100%; }
+    .snippet-actions > .btn-primary { width: 100%; }
 }
