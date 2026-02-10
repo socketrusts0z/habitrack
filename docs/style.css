@@ -71,6 +71,15 @@ body {
     box-shadow: 0 10px 24px rgba(0,0,0,0.12);
     z-index: 1000;
 }
+.habit-create-panel input {
+    flex: 1;
+    min-width: 0;
+    height: 40px;
+}
+.habit-create-panel .btn-primary {
+    height: 40px;
+    padding: 0 16px;
+}
 .habit-create-panel.hidden { display: none !important; }
 .summary-title-wrap { position: relative; display: inline-flex; align-items: center; }
 .summary-title-btn { background: transparent; border: none; padding: 0; font-size: 0.9rem; font-weight: 600; color: var(--text-main); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
@@ -202,7 +211,8 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
     .header-actions > * { width: auto; }
     .habit-create { flex: 0 0 auto; }
     .habit-create-panel { width: min(100vw - 2.5rem, 360px); }
-    .habit-create-panel input { flex: 1; min-width: 0; }
+    .habit-create-panel input { height: 42px; }
+    .habit-create-panel .btn-primary { height: 42px; }
     .theme-toggle-wrapper { margin-left: auto; flex: 0 0 auto; width: 44px; }
     #habit-manage-toggle { width: auto; align-self: flex-end; }
     .summary-title-btn { font-size: 1.05rem; }
