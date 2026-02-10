@@ -215,16 +215,18 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
     .stat-pb { font-size: 12px; }
     .food-grid { grid-template-columns: 1fr; max-height: 220px; }
     .protein-meter { transform: scale(0.95); }
+    .grid-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .grid-display, .habit-grid-instance {
-        --day-gap: 1px;
+        --day-size: 12px;
+        --day-gap: 2px;
         display: grid;
-        grid-template-columns: repeat(53, minmax(0, 1fr));
+        grid-template-columns: repeat(53, var(--day-size));
         gap: var(--day-gap);
-        width: 100%;
-        max-width: 100%;
-        overflow: hidden;
+        width: max-content;
+        max-width: none;
+        overflow: visible;
     }
-    .graph-day, .habit-day { width: 100%; aspect-ratio: 1 / 1; }
+    .graph-day, .habit-day { width: var(--day-size); height: var(--day-size); }
     .summary-menu { min-width: 190px; }
     .btn-primary, .btn-success { padding: 12px 16px; font-size: 15px; }
     input[type="text"], input[type="date"], input[type="number"], textarea { font-size: 16px; }
@@ -239,6 +241,6 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
     .settings-card [style*="display: flex"] { flex-direction: column !important; }
     .settings-card [style*="display: flex"] > * { width: 100% !important; }
     .snippet-actions { flex-wrap: wrap; width: 100%; gap: 8px; justify-content: flex-start; }
-    .snippet-actions > * { flex: 1 1 140px; min-width: 140px; }
+    .snippet-actions > * { flex: 1 1 120px; min-width: 120px; }
     .snippet-actions .btn-primary { width: 100%; }
 }
