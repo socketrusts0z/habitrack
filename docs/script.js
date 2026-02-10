@@ -651,6 +651,8 @@ async function renderGraph() {
     const data = await getData('protein_intake'), g = el('graph');
     if (!g) return; g.innerHTML = '';
     const days = getGridDayCount();
+    const cols = Math.ceil((days + 1) / 7);
+    g.style.setProperty('--grid-cols', cols);
     for (let i = days; i >= 0; i--) {
         const d = new Date(); d.setDate(d.getDate() - i);
         const s = getLocalDateString(d), v = data.find(x => x.date === s)?.protein_grams || 0;
@@ -738,6 +740,8 @@ async function renderHabitGraph(name) {
     if (!g) return;
     const isNew = g.children.length === 0;
     const days = getGridDayCount();
+    const cols = Math.ceil((days + 1) / 7);
+    g.style.setProperty('--grid-cols', cols);
     for (let i = days; i >= 0; i--) {
         const d = new Date(); d.setDate(d.getDate() - i);
         const s = getLocalDateString(d), done = hist.find(x => x.habit_name === name && x.date === s)?.performed;
