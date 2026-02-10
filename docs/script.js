@@ -2,68 +2,43 @@ let selectedFoods = {}, habitToDelete = null, activeHabitName = null;
 const EMOJI_OPTIONS = ['💧','🏃','🧘','📖','🥗','😴','🏋️','🧠','📝','🧹','🧑‍💻','🦷','🍵','🚶','🎧','🪴','🎯','🛌','🧴','🧊','🚰','🍎','🌞','🧘‍♂️','🧘‍♀️','🧠'];
 const DEFAULT_FOODS = [{ id: 101, name: 'Egg', protein_per_serving: 6 }, { id: 102, name: 'Whey Protein', protein_per_serving: 25 }];
 const el = (id) => document.getElementById(id);
-const DB_NAME = 'habit_pwa';
-const DB_STORE = 'kv';
-const openDb = () => new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = () => {
-        const db = req.result;
-        if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+const setAttrs = (node, attrs) => Object.entries(attrs).forEach(([k, v]) => node.setAttribute(k, v));
+
+// --- CHANGED: LocalStorage Polyfill for PWA ---
+const getData = (key) => new Promise(res => {
+    try {
+        const item = localStorage.getItem(key);
+        res(item ? JSON.parse(item) : []);
+    } catch (e) {
+        console.error("Storage Error", e);
+        res([]);
+    }
 });
-const withStore = async (mode, fn) => {
-    const db = await openDb();
-    return new Promise((resolve, reject) => {
-        const tx = db.transaction(DB_STORE, mode);
-        const store = tx.objectStore(DB_STORE);
-        const res = fn(store);
-        tx.oncomplete = () => resolve(res);
-        tx.onerror = () => reject(tx.error);
-    });
-};
-const getData = async (key) => {
-    const value = await withStore('readonly', store => new Promise((resolve) => {
-        const req = store.get(key);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => resolve(undefined);
-    }));
-    return value ?? [];
-};
-const setData = (key, val) => withStore('readwrite', store => store.put(val, key));
-const getAllData = () => withStore('readonly', store => new Promise((resolve) => {
-    const out = {};
-    const req = store.openCursor();
-    req.onsuccess = (e) => {
-        const cur = e.target.result;
-        if (!cur) return resolve(out);
-        out[cur.key] = cur.value;
-        cur.continue();
-    };
-    req.onerror = () => resolve(out);
-}));
-const setAllData = async (obj) => {
-    await withStore('readwrite', store => {
-        Object.entries(obj).forEach(([k, v]) => store.put(v, k));
-    });
-};
-const clearAllData = () => withStore('readwrite', store => store.clear());
+const setData = (key, val) => new Promise(res => {
+    try {
+        localStorage.setItem(key, JSON.stringify(val));
+        res();
+    } catch (e) {
+        console.error("Storage Save Error", e);
+        res();
+    }
+});
+// ----------------------------------------------
+
 const getLocalDateString = (d = new Date()) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
 const getHabitLists = async () => {
     const [habits, hidden] = await Promise.all([getData('habits_list'), getData('hidden_habits')]);
-    const cleanedHidden = hidden.filter(h => habits.includes(h));
-    if (cleanedHidden.length !== hidden.length) await setData('hidden_habits', cleanedHidden);
-    return { habits, hidden: cleanedHidden };
+    // Ensure array types if corrupted
+    const hList = Array.isArray(habits) ? habits : [];
+    const hHidden = Array.isArray(hidden) ? hidden : [];
+    const cleanedHidden = hHidden.filter(h => hList.includes(h));
+    if (cleanedHidden.length !== hHidden.length) await setData('hidden_habits', cleanedHidden);
+    return { habits: hList, hidden: cleanedHidden };
 };
 const getHabitIcons = async () => {
     const icons = await getData('habit_icons');
     return icons && !Array.isArray(icons) ? icons : {};
 };
-
-function getGridDayCount() {
-    return window.matchMedia('(max-width: 600px)').matches ? 182 : 365;
-}
 
 document.addEventListener("DOMContentLoaded", async () => {
     if (await getData('theme_preference') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
@@ -82,14 +57,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         el('toggle-snippet-collapse').textContent = 'Expand';
     }
 
-    if ((await getData('food_list')).length === 0) await setData('food_list', DEFAULT_FOODS);
-    setupEventListeners();
-    try {
-        await refreshDashboard();
-    } catch (e) {
-        console.error(e);
-        showToast('Load error');
+    let foodList = await getData('food_list');
+    if (!Array.isArray(foodList) || foodList.length === 0) {
+        await setData('food_list', DEFAULT_FOODS);
     }
+    await refreshDashboard();
+    setupEventListeners();
 });
 
 async function refreshDashboard() {
@@ -112,6 +85,7 @@ function setupEventListeners() {
 
     document.addEventListener('click', (e) => {
         if (!el('custom-context-menu').contains(e.target)) el('custom-context-menu').classList.add('hidden');
+        if (!el('emoji-picker').contains(e.target)) el('emoji-picker').classList.add('hidden');
     });
 
     el('date')?.addEventListener('change', refreshDashboard);
@@ -122,7 +96,6 @@ function setupEventListeners() {
     document.addEventListener('click', () => {
         el('performance-range-menu')?.classList.add('hidden');
     });
-
     document.querySelectorAll('.summary-menu-item').forEach(b => {
         b.onclick = async (e) => {
             e.stopPropagation();
@@ -136,7 +109,9 @@ function setupEventListeners() {
 
     el('submit').onclick = async () => {
         const date = el('date').value, total = Object.values(selectedFoods).reduce((s, f) => s + (f.protein_per_serving * f.servings), 0);
-        const list = (await getData('protein_intake')).filter(i => i.date !== date);
+        let list = await getData('protein_intake');
+        if (!Array.isArray(list)) list = [];
+        list = list.filter(i => i.date !== date);
         list.push({ date, protein_grams: total, foods: { ...selectedFoods } });
         await setData('protein_intake', list);
         showToast('Saved'); renderGraph(); updateWeeklyInsights();
@@ -144,7 +119,9 @@ function setupEventListeners() {
 
     el('save-screen-time').onclick = async () => {
         const mins = (parseInt(el('screen-hours').value) || 0) * 60 + (parseInt(el('screen-minutes').value) || 0);
-        const history = (await getData('screentime_history')).filter(h => h.date !== el('date').value);
+        let history = await getData('screentime_history');
+        if (!Array.isArray(history)) history = [];
+        history = history.filter(h => h.date !== el('date').value);
         history.push({ date: el('date').value, total_minutes: mins });
         await setData('screentime_history', history);
         showToast('Saved'); renderScreenTimeChart(); updateWeeklyInsights();
@@ -152,16 +129,21 @@ function setupEventListeners() {
 
     el('snippet-week-picker').onchange = loadSnippet;
 
-    el('habit-create-toggle').onclick = () => {
-        const panel = el('habit-create-panel');
-        const isHidden = panel.classList.toggle('hidden');
-        el('habit-create-toggle').setAttribute('aria-expanded', String(!isHidden));
-        if (!isHidden) el('new-habit-name').focus();
+    el('share-weekly-card').onclick = async () => {
+        const data = await buildMonthlyCardData();
+        const url = await renderMonthlyCardImage(data);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `monthly-card-${data.endDate}.png`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
     };
     
     el('save-snippet').onclick = async () => {
         const week = el('snippet-week-picker').value, content = el('snippet-input').value;
-        const snips = (await getData('weekly_snippets')).filter(s => s.week !== week);
+        let snips = await getData('weekly_snippets');
+        if (!Array.isArray(snips)) snips = [];
+        snips = snips.filter(s => s.week !== week);
         snips.push({ week, content });
         await setData('weekly_snippets', snips);
         el('snippet-preview-container').innerHTML = parseMarkdown(content);
@@ -199,7 +181,8 @@ function setupEventListeners() {
     el('save-new-food').onclick = async () => {
         const name = el('food-search').value.trim(), prot = parseInt(el('new-food-protein').value);
         if (name && !isNaN(prot)) {
-            const foods = await getData('food_list');
+            let foods = await getData('food_list');
+            if(!Array.isArray(foods)) foods = [];
             foods.push({ id: Date.now(), name, protein_per_serving: prot });
             await setData('food_list', foods);
             el('food-search').value = ''; el('new-food-protein').value = '';
@@ -209,7 +192,8 @@ function setupEventListeners() {
 
     const createHabit = async (name) => {
         if (!name) return;
-        const habits = await getData('habits_list');
+        let habits = await getData('habits_list');
+        if(!Array.isArray(habits)) habits = [];
         if (!habits.includes(name)) {
             habits.push(name);
             await setData('habits_list', habits);
@@ -217,12 +201,7 @@ function setupEventListeners() {
         }
     };
 
-    el('create-habit').onclick = () => {
-        createHabit(el('new-habit-name').value.trim());
-        el('new-habit-name').value = '';
-        el('habit-create-panel').classList.add('hidden');
-        el('habit-create-toggle').setAttribute('aria-expanded', 'false');
-    };
+    el('create-habit').onclick = () => { createHabit(el('new-habit-name').value.trim()); el('new-habit-name').value = ''; };
     el('splash-create-btn').onclick = () => createHabit(el('splash-habit-name').value.trim());
 
     el('set-default-option').onclick = async () => {
@@ -233,24 +212,28 @@ function setupEventListeners() {
         }
     };
 
-    const iconOpt = el('set-icon-option');
-    if (iconOpt) {
-        iconOpt.onclick = async (e) => {
-            e.stopPropagation();
-            if (!habitToDelete) return;
-            const menu = el('custom-context-menu');
-            const picker = el('emoji-picker');
-            const r = menu.getBoundingClientRect();
-            picker.style.cssText = `top:${r.bottom + window.scrollY + 6}px;left:${r.left + window.scrollX}px;`;
-            renderEmojiPicker(habitToDelete);
-            picker.classList.remove('hidden');
-            el('custom-context-menu').classList.add('hidden');
-        };
-    }
+    el('set-icon-option').onclick = async (e) => {
+        e.stopPropagation();
+        if (!habitToDelete) return;
+        const menu = el('custom-context-menu');
+        const picker = el('emoji-picker');
+        const r = menu.getBoundingClientRect();
+        
+        // PWA Fix: Center on screen if close to edge
+        let top = r.bottom + window.scrollY + 6;
+        let left = r.left + window.scrollX;
+        if(window.innerWidth < 600) { left = 10; top = window.scrollY + 100; }
+        
+        picker.style.cssText = `top:${top}px;left:${left}px;`;
+        renderEmojiPicker(habitToDelete);
+        picker.classList.remove('hidden');
+        el('custom-context-menu').classList.add('hidden');
+    };
 
     el('hide-option').onclick = async () => {
         if (!habitToDelete) return;
-        const hidden = await getData('hidden_habits');
+        let hidden = await getData('hidden_habits');
+        if(!Array.isArray(hidden)) hidden = [];
         if (!hidden.includes(habitToDelete)) {
             hidden.push(habitToDelete);
             await setData('hidden_habits', hidden);
@@ -270,70 +253,26 @@ function setupEventListeners() {
         }
     };
 
-    const runImport = async (text) => {
-        try {
-            const parsed = JSON.parse(text);
-            await setAllData(parsed);
-            showToast('Imported');
-            setTimeout(() => location.reload(), 400);
-        } catch {
-            alert("Invalid JSON");
-        }
-    };
-
     el('import-btn').onclick = async () => {
-        showToast('Import clicked');
-        const text = el('import-json').value.trim();
-        if (text) return runImport(text);
-        el('import-file').click();
+        try { 
+            const data = JSON.parse(el('import-json').value);
+            Object.keys(data).forEach(k => localStorage.setItem(k, JSON.stringify(data[k])));
+            location.reload(); 
+        } catch { alert("Invalid JSON"); }
     };
 
-    el('import-file').onchange = async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const text = await file.text();
-        runImport(text);
-        e.target.value = '';
-    };
-
-    el('export-btn').onclick = async () => {
-        showToast('Export clicked');
-        const data = await getAllData();
-        const filename = `backup-${getLocalDateString()}.json`;
-        const text = JSON.stringify(data, null, 2);
-        const blob = new Blob([text], { type: 'application/json' });
-        el('import-json').value = text;
-        showToast('Export ready (copied below)');
-        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-        // iOS Safari often blocks downloads; try share, then clipboard, then download
-        if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'application/json' })] }) && navigator.share) {
-            try {
-                await navigator.share({ files: [new File([blob], filename, { type: 'application/json' })], title: filename });
-                return;
-            } catch {}
+    el('export-btn').onclick = () => {
+        const data = {};
+        for(let i=0; i<localStorage.length; i++) {
+            const k = localStorage.key(i);
+            try { data[k] = JSON.parse(localStorage.getItem(k)); } catch(e){ data[k] = localStorage.getItem(k); }
         }
-        if (navigator.clipboard?.writeText) {
-            try {
-                await navigator.clipboard.writeText(text);
-                showToast('Export copied to clipboard');
-            } catch {}
-        }
-        if (isSafari) {
-            prompt('Copy your export JSON below:', text);
-            return;
-        }
-        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.target = '_blank';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 2000);
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+        a.download = `backup-${getLocalDateString()}.json`; a.click();
     };
 
-    el('clear-all-btn').onclick = async () => confirm("Clear all?") && (await clearAllData(), location.reload());
+    el('clear-all-btn').onclick = async () => confirm("Clear all?") && (localStorage.clear(), location.reload());
 }
 
 async function buildMonthlyCardData() {
@@ -349,15 +288,16 @@ async function buildMonthlyCardData() {
     ]);
     const hiddenSet = new Set(lists.hidden);
     const visibleHabits = lists.habits.filter(h => !hiddenSet.has(h));
-    const totalProtein = pD.filter(d => last30.includes(d.date)).reduce((a, b) => a + b.protein_grams, 0);
-    const totalScreenMins = sD.filter(d => last30.includes(d.date)).reduce((a, b) => a + b.total_minutes, 0);
+    const totalProtein = (Array.isArray(pD)?pD:[]).filter(d => last30.includes(d.date)).reduce((a, b) => a + b.protein_grams, 0);
+    const totalScreenMins = (Array.isArray(sD)?sD:[]).filter(d => last30.includes(d.date)).reduce((a, b) => a + b.total_minutes, 0);
     const avgProtein = totalProtein / days;
     const avgScreenHours = totalScreenMins / (days * 60);
     let totalCompletions = 0;
     let activeHabits = 0;
     let bestStreak = 0;
+    const histData = Array.isArray(hD) ? hD : [];
     for (const h of visibleHabits) {
-        const done = hD.filter(d => d.habit_name === h && last30.includes(d.date) && d.performed).length;
+        const done = histData.filter(d => d.habit_name === h && last30.includes(d.date) && d.performed).length;
         totalCompletions += done;
         if (done > 0) activeHabits++;
         const streak = await getStreakData(h, 'pb');
@@ -366,7 +306,7 @@ async function buildMonthlyCardData() {
     const totalPossible = visibleHabits.length * days;
     const completionRate = totalPossible ? (totalCompletions / totalPossible) : 0;
     const daily = last30.slice().reverse().map(date => {
-        const done = hD.filter(d => d.date === date && d.performed && visibleHabits.includes(d.habit_name)).length;
+        const done = histData.filter(d => d.date === date && d.performed && visibleHabits.includes(d.habit_name)).length;
         const possible = visibleHabits.length || 0;
         const rate = possible ? (done / possible) : 0;
         const level = rate === 0 ? 0 : rate < 0.34 ? 1 : rate < 0.67 ? 2 : 3;
@@ -530,10 +470,11 @@ async function renderScreenTimeChart() {
         endDate.setDate(endDate.getDate() + (7 - dayOfWeek));
     }
 
+    const histData = Array.isArray(data) ? data : [];
     for (let i = range - 1; i >= 0; i--) {
         const d = new Date(endDate);
         d.setDate(d.getDate() - i);
-        const s = getLocalDateString(d), entry = data.find(x => x.date === s);
+        const s = getLocalDateString(d), entry = histData.find(x => x.date === s);
         pts.push({ date: s, val: entry ? entry.total_minutes / 60 : 0, label: `${d.getMonth() + 1}/${d.getDate()}` });
     }
 
@@ -544,17 +485,17 @@ async function renderScreenTimeChart() {
     for (let v = 0; v <= maxV; v += (maxV > 10 ? 4 : 2)) {
         const y = getY(v);
         const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        Object.entries({x1:pL, y1:y, x2:w-pR, y2:y, stroke:"var(--border)", "stroke-dasharray":"2,2", opacity:0.5}).forEach(([k,v])=>line.setAttribute(k,v));
+        setAttrs(line, { x1: pL, y1: y, x2: w - pR, y2: y, stroke: "var(--border)", "stroke-dasharray": "2,2", opacity: 0.5 });
         svg.appendChild(line);
         const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        Object.entries({x:pL-5, y:y+3, "text-anchor":"end", "font-size":"10px", fill:"var(--text-muted)"}).forEach(([k,v])=>txt.setAttribute(k,v));
+        setAttrs(txt, { x: pL - 5, y: y + 3, "text-anchor": "end", "font-size": "10px", fill: "var(--text-muted)" });
         txt.textContent = `${v}h`; svg.appendChild(txt);
     }
 
     pts.forEach((pt, i) => {
         if (range > 14 && i % Math.ceil(range/7) !== 0 && i !== pts.length - 1) return;
         const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        Object.entries({x:getX(i), y:h-10, "text-anchor":"middle", "font-size":"10px", fill:"var(--text-muted)"}).forEach(([k,v])=>txt.setAttribute(k,v));
+        setAttrs(txt, { x: getX(i), y: h - 10, "text-anchor": "middle", "font-size": "10px", fill: "var(--text-muted)" });
         txt.textContent = pt.label; svg.appendChild(txt);
     });
 
@@ -565,12 +506,12 @@ async function renderScreenTimeChart() {
         pathD += ` C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`;
     }
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    Object.entries({d:pathD, fill:"none", stroke:"var(--primary)", "stroke-width":"2.5"}).forEach(([k,v])=>path.setAttribute(k,v));
+    setAttrs(path, { d: pathD, fill: "none", stroke: "var(--primary)", "stroke-width": "2.5" });
     svg.appendChild(path);
 
     pts.forEach((pt, i) => {
         const circ = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        Object.entries({cx:getX(i), cy:getY(pt.val), r:4, fill:"var(--primary)"}).forEach(([k,v])=>circ.setAttribute(k,v));
+        setAttrs(circ, { cx: getX(i), cy: getY(pt.val), r: 4, fill: "var(--primary)" });
         circ.style.cursor = "pointer";
         circ.onclick = () => { el('date').value = pt.date; refreshDashboard(); };
         const t = document.createElementNS("http://www.w3.org/2000/svg", "title");
@@ -593,12 +534,14 @@ async function updateWeeklyInsights() {
     ]);
     const hiddenSet = new Set(lists.hidden);
     const hL = lists.habits.filter(h => !hiddenSet.has(h));
-    const avgP = pD.filter(d => dates.includes(d.date)).reduce((a, b) => a + b.protein_grams, 0) / days;
-    const avgS = sD.filter(d => dates.includes(d.date)).reduce((a, b) => a + b.total_minutes, 0) / (days * 60);
+    const avgP = (Array.isArray(pD)?pD:[]).filter(d => dates.includes(d.date)).reduce((a, b) => a + b.protein_grams, 0) / days;
+    const avgS = (Array.isArray(sD)?sD:[]).filter(d => dates.includes(d.date)).reduce((a, b) => a + b.total_minutes, 0) / (days * 60);
     updateStatCard(cont, "Avg Protein", `${Math.round(avgP)}g`);
     updateStatCard(cont, "Avg Screen", `${avgS.toFixed(1)}h`);
+    
+    const histData = Array.isArray(hD) ? hD : [];
     for (const h of hL) {
-        const done = hD.filter(d => d.habit_name === h && dates.includes(d.date) && d.performed).length;
+        const done = histData.filter(d => d.habit_name === h && dates.includes(d.date) && d.performed).length;
         const streak = await getStreakData(h, 'streak'), pb = await getStreakData(h, 'pb');
         const emoji = icons[h] ? `${icons[h]} ` : '';
         updateStatCard(cont, h, `${Math.round((done / days) * 100)}%`, streak, pb, `${emoji}${h}`);
@@ -626,7 +569,9 @@ function getPerformanceRange(range) {
 }
 
 async function getStreakData(name, type) {
-    const data = (await getData('habit_history')).filter(d => d.habit_name === name && d.performed).map(e => e.date).sort();
+    let hist = await getData('habit_history');
+    if(!Array.isArray(hist)) hist = [];
+    const data = hist.filter(d => d.habit_name === name && d.performed).map(e => e.date).sort();
     if (!data.length) return 0;
     let max = 0, curr = 0, last = null;
     for (const d of data) {
@@ -648,12 +593,16 @@ function updateStatCard(cont, title, val, streak = 0, pb = 0, displayTitle = nul
 }
 
 async function renderGraph() {
-    const data = await getData('protein_intake'), g = el('graph');
+    let data = await getData('protein_intake');
+    if(!Array.isArray(data)) data = [];
+    const g = el('graph');
     if (!g) return; g.innerHTML = '';
-    const days = getGridDayCount();
-    const cols = Math.ceil((days + 1) / 7);
-    g.style.setProperty('--grid-cols', cols);
-    for (let i = days; i >= 0; i--) {
+    
+    // PWA: Mobile Logic to prevent scrolling
+    const isMobile = window.innerWidth < 600;
+    const daysToShow = isMobile ? 84 : 365; // 84 days = 12 weeks
+    
+    for (let i = daysToShow; i >= 0; i--) {
         const d = new Date(); d.setDate(d.getDate() - i);
         const s = getLocalDateString(d), v = data.find(x => x.date === s)?.protein_grams || 0;
         const lvl = v === 0 ? 0 : v < 50 ? 1 : v < 100 ? 2 : v < 150 ? 3 : 4;
@@ -672,16 +621,17 @@ async function renderHabitTrackers() {
     if (!habits.length) return;
     nav.innerHTML = '';
     visibleHabits.forEach(h => {
-        const wrap = document.createElement('div'); wrap.className = 'habit-item-wrap'; wrap.dataset.habit = h;
         const btn = document.createElement('div'); btn.className = 'habit-nav-item'; btn.dataset.habit = h;
         const emoji = icons[h] ? `<span class="habit-emoji">${icons[h]}</span>` : '';
         btn.innerHTML = `${emoji}<span class="habit-name">${h}</span>`;
         btn.onclick = () => showHabitGrid(h);
-        btn.title = 'Long-press or right-click to manage';
+        btn.oncontextmenu = (e) => {
+            e.preventDefault(); habitToDelete = h;
+            el('custom-context-menu').style.cssText = `top:${e.clientY}px;left:${e.clientX}px;`;
+            el('custom-context-menu').classList.remove('hidden');
+        };
         attachHabitLongPress(btn, h);
-
-        wrap.appendChild(btn);
-        nav.appendChild(wrap);
+        nav.appendChild(btn);
         if (!el(`habit-${h}`)) {
             const g = document.createElement('div'); g.id = `habit-${h}`; g.className = 'habit-grid-instance hidden';
             cont.appendChild(g);
@@ -719,42 +669,32 @@ async function renderHabitTrackers() {
     showHabitGrid(activeHabitName && visibleHabits.includes(activeHabitName) ? activeHabitName : (visibleHabits.includes(def) ? def : visibleHabits[0]));
 }
 
-async function hideHabit(name) {
-    const hidden = await getData('hidden_habits');
-    if (!hidden.includes(name)) {
-        hidden.push(name);
-        await setData('hidden_habits', hidden);
-        showToast(`Hidden: ${name}`);
-        renderHabitTrackers(); updateWeeklyInsights();
-    }
-}
-
-async function setDefaultHabit(name) {
-    await setData('default_habit', name);
-    showToast(`Default: ${name}`);
-    renderHabitTrackers();
-}
-
 async function renderHabitGraph(name) {
-    const hist = await getData('habit_history'), g = el(`habit-${name}`);
+    let hist = await getData('habit_history');
+    if(!Array.isArray(hist)) hist = [];
+    
+    const g = el(`habit-${name}`);
     if (!g) return;
-    const isNew = g.children.length === 0;
-    const days = getGridDayCount();
-    const cols = Math.ceil((days + 1) / 7);
-    g.style.setProperty('--grid-cols', cols);
-    for (let i = days; i >= 0; i--) {
+    
+    // PWA: Mobile Logic to prevent scrolling
+    const isMobile = window.innerWidth < 600;
+    const daysToShow = isMobile ? 84 : 365; // 84 days = 12 weeks
+    
+    g.innerHTML = ''; // Force redraw for responsive switch
+    
+    for (let i = daysToShow; i >= 0; i--) {
         const d = new Date(); d.setDate(d.getDate() - i);
         const s = getLocalDateString(d), done = hist.find(x => x.habit_name === name && x.date === s)?.performed;
-        let day = isNew ? document.createElement('div') : g.children[days - i];
-        if (isNew) {
-            day.onclick = async () => {
-                let h = await getData('habit_history');
-                const idx = h.findIndex(x => x.habit_name === name && x.date === s);
-                idx > -1 ? h[idx].performed = h[idx].performed ? 0 : 1 : h.push({ date: s, habit_name: name, performed: 1 });
-                await setData('habit_history', h); renderHabitGraph(name); updateWeeklyInsights();
-            };
-            g.appendChild(day);
-        }
+        
+        const day = document.createElement('div');
+        day.onclick = async () => {
+            let h = await getData('habit_history');
+            if(!Array.isArray(h)) h = [];
+            const idx = h.findIndex(x => x.habit_name === name && x.date === s);
+            idx > -1 ? h[idx].performed = h[idx].performed ? 0 : 1 : h.push({ date: s, habit_name: name, performed: 1 });
+            await setData('habit_history', h); renderHabitGraph(name); updateWeeklyInsights();
+        };
+        g.appendChild(day);
         day.className = `habit-day ${done ? 'level-3' : 'level-0'}`; day.title = s;
     }
 }
@@ -762,7 +702,7 @@ async function renderHabitGraph(name) {
 async function renderFoods() {
     const foods = await getData('food_list'), gal = el('food-gallery');
     gal.innerHTML = '';
-    foods.forEach(f => {
+    (Array.isArray(foods)?foods:[]).forEach(f => {
         const b = document.createElement('div'); b.className = 'food-box'; b.setAttribute('data-name', f.name);
         b.innerHTML = `<span class="delete-food-btn">&times;</span><div>${f.name}</div><div style="color:var(--primary)">${f.protein_per_serving}g</div>`;
         b.onclick = async (e) => {
@@ -799,66 +739,55 @@ function renderSelectedFoods() {
 }
 
 async function loadDailySelections(date) {
-    const entry = (await getData('protein_intake')).find(x => x.date === date);
+    let pi = await getData('protein_intake');
+    if(!Array.isArray(pi)) pi = [];
+    const entry = pi.find(x => x.date === date);
     selectedFoods = entry ? entry.foods : {}; renderSelectedFoods();
-    const s = (await getData('screentime_history')).find(x => x.date === date);
+    
+    let sh = await getData('screentime_history');
+    if(!Array.isArray(sh)) sh = [];
+    const s = sh.find(x => x.date === date);
     el('screen-hours').value = s ? Math.floor(s.total_minutes / 60) : '';
     el('screen-minutes').value = s ? s.total_minutes % 60 : '';
 }
 
 function showHabitGrid(name) {
     activeHabitName = name;
-    setData('default_habit', name);
     document.querySelectorAll('.habit-grid-instance').forEach(g => g.classList.toggle('hidden', g.id !== `habit-${name}`));
     document.querySelectorAll('.habit-nav-item').forEach(i => i.classList.toggle('active', i.dataset.habit === name));
 }
 
-function openHabitMenuAt(clientX, clientY) {
-    const menu = el('custom-context-menu');
-    menu.classList.remove('hidden');
-    const menuRect = menu.getBoundingClientRect();
-    let left = clientX + window.scrollX;
-    const maxLeft = window.scrollX + window.innerWidth - menuRect.width - 8;
-    if (left > maxLeft) left = maxLeft;
-    let top = clientY + window.scrollY;
-    const maxTop = window.scrollY + window.innerHeight - menuRect.height - 8;
-    if (top > maxTop) top = clientY + window.scrollY - menuRect.height - 8;
-    menu.style.cssText = `top:${Math.max(top, 8 + window.scrollY)}px;left:${Math.max(left, 8 + window.scrollX)}px;`;
-}
-
 function attachHabitLongPress(elm, habitName) {
-    const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
     let timer = null;
     let fired = false;
     const start = (e) => {
         if (e.touches && e.touches.length > 1) return;
+        // Don't prevent default immediately for scrolling, but timer will fire
         fired = false;
         timer = setTimeout(() => {
             fired = true;
             habitToDelete = habitName;
             const t = e.touches ? e.touches[0] : e;
-            openHabitMenuAt(t.clientX, t.clientY);
+            el('custom-context-menu').style.cssText = `top:${t.clientY}px;left:${t.clientX}px;`;
+            el('custom-context-menu').classList.remove('hidden');
         }, 550);
     };
     const cancel = () => {
         if (timer) { clearTimeout(timer); timer = null; }
     };
-    elm.addEventListener('touchstart', start, { passive: false });
+    elm.addEventListener('touchstart', start, { passive: true });
     elm.addEventListener('touchend', (e) => {
         if (fired) {
             if (e.cancelable) e.preventDefault();
             e.stopPropagation();
+        } else {
+            // Natural tap handles click
         }
         cancel();
     });
     elm.addEventListener('touchcancel', cancel);
     elm.addEventListener('touchmove', cancel);
-    elm.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        if (isTouchDevice) return;
-        habitToDelete = habitName;
-        openHabitMenuAt(e.clientX, e.clientY);
-    });
+    elm.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
 function showToast(m) {
@@ -867,7 +796,9 @@ function showToast(m) {
 }
 
 async function loadSnippet() {
-    const snips = await getData('weekly_snippets'), entry = snips.find(s => s.week === el('snippet-week-picker').value);
+    let snips = await getData('weekly_snippets');
+    if(!Array.isArray(snips)) snips = [];
+    const entry = snips.find(s => s.week === el('snippet-week-picker').value);
     el('snippet-input').value = entry?.content || '';
     el('snippet-preview-container').innerHTML = parseMarkdown(entry?.content);
     if(entry?.content) toggleSnippet(true);

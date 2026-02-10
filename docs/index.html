@@ -2,18 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="HabiTrack">
+    <link rel="apple-touch-icon" href="icon.png"> <link rel="manifest" href="manifest.json">
     <title>Habit Dashboard</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ffffff">
-    <link rel="icon" href="icon-192.png">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png">
 </head>
 <body>
 <div id="splash-screen" class="splash-overlay hidden">
     <div class="splash-content">
-        <div class="splash-icon">🚀</div>
+        <div class="splash-icon">&#x1F680;</div>
         <h1>Welcome to HabiTrack</h1>
         <p>Start your journey by creating your first habit!</p>
         <div class="splash-action">
@@ -37,14 +37,10 @@
                     <button type="button" class="summary-menu-item" data-range="calendar">Calendar Month</button>
                 </div>
             </div>
-                <div class="header-actions">
-                <div class="habit-create">
-                    <button type="button" id="habit-create-toggle" class="btn-primary habit-create-toggle" aria-expanded="false" aria-controls="habit-create-panel">+</button>
-                    <div id="habit-create-panel" class="habit-create-panel hidden">
-                        <input type="text" id="new-habit-name" placeholder="New habit name...">
-                        <button type="button" id="create-habit" class="btn-primary">Add</button>
-                    </div>
-                </div>
+            <div class="header-actions">
+                <input type="text" id="new-habit-name" placeholder="New habit name...">
+                <button type="button" id="create-habit" class="btn-primary">Create</button>
+                <button type="button" id="share-weekly-card" class="btn-primary" style="background-color: #57606a;">Share</button>
                 <div class="theme-toggle-wrapper">
                     <button id="theme-toggle" title="Toggle Light/Dark Mode">
                         <span class="sun-icon">&#x2600;&#xFE0F;</span>
@@ -59,9 +55,7 @@
     <div class="dashboard-grid">
         <div class="left-column">
             <section class="card">
-                <div class="header-actions-row" style="margin-bottom: 0.5rem;">
-                    <h2 class="section-title" style="margin:0;">Habit Mastery</h2>
-                </div>
+                <h2 class="section-title">Habit Mastery</h2>
                 <nav id="habit-navigation" class="habit-nav"></nav>
                 <div id="hidden-habits" class="hidden-habits hidden"></div>
                 <div id="habit-grid-container" class="grid-wrapper"></div>
@@ -69,14 +63,12 @@
 
             <section class="card">
                 <h2 class="section-title">Yearly Protein Activity</h2>
-                <div class="grid-wrapper">
-                    <div id="graph" class="grid-display"></div>
-                </div>
+                <div id="graph" class="grid-display"></div>
             </section>
 
             <section class="card">
                 <div class="header-actions-row" style="margin-bottom: 0.5rem;">
-                    <h2 class="section-title" style="margin:0;">Screen Time Trend</h2>
+                    <h2 class="section-title" style="margin:0;">Screen Time</h2>
                     <div class="header-actions">
                         <input type="week" id="screen-week-picker" class="search-bar" style="width: auto; padding: 2px 8px; height: 24px;">
                         <select id="screen-time-range" class="search-bar" style="width: auto; padding: 2px 8px; height: 24px;">
@@ -93,12 +85,12 @@
 
             <section class="card">
                 <div class="header-actions-row">
-                    <h2 class="section-title">Weekly Snippets (Markdown)</h2>
-                    <div class="header-actions snippet-actions">
+                    <h2 class="section-title">Weekly Journal</h2>
+                    <div class="header-actions">
                         <button id="toggle-snippet-collapse" class="btn-primary" style="background-color: #57606a;">Collapse</button>
                         <input type="week" id="snippet-week-picker" class="search-bar" style="width: auto;">
                         <button id="toggle-snippet-preview" class="btn-primary" style="background-color: #57606a;">Edit</button>
-                        <button id="save-snippet" class="btn-primary">Save Snippet</button>
+                        <button id="save-snippet" class="btn-primary">Save</button>
                     </div>
                 </div>
                 <div id="snippet-body">
@@ -165,10 +157,9 @@
             <section class="card settings-card">
                 <h2 class="section-title">Data Management</h2>
                 <textarea id="import-json" placeholder="Paste JSON here to import..."></textarea>
-                <input id="import-file" type="file" accept="application/json" class="file-input-hidden">
                 <div style="display: flex; gap: 8px; margin-top: 8px;">
-                    <button id="import-btn" type="button" class="btn-primary" style="flex: 1; margin-top: 0;">Import</button>
-                    <button id="export-btn" type="button" class="btn-primary" style="flex: 1; margin-top: 0; background-color: #57606a;">Export</button>
+                    <button id="import-btn" class="btn-primary" style="flex: 1; margin-top: 0;">Import</button>
+                    <button id="export-btn" class="btn-primary" style="flex: 1; margin-top: 0; background-color: #57606a;">Export</button>
                 </div>
                 <div class="section-divider"></div>
                 <button id="clear-all-btn" class="btn-danger-outline" style="width:100%;">Clear All Data</button>
@@ -179,14 +170,11 @@
 <div id="toast-container"></div>
 <div id="custom-context-menu" class="hidden">
     <div id="set-default-option" class="menu-option" style="color: var(--text-main); border-bottom: 1px solid var(--border);">Set as Default</div>
+    <div id="set-icon-option" class="menu-option" style="color: var(--text-main); border-bottom: 1px solid var(--border);">Set Icon</div>
     <div id="hide-option" class="menu-option" style="color: var(--text-main); border-bottom: 1px solid var(--border);">Hide Habit</div>
     <div id="delete-option" class="menu-option">Delete Habit</div>
 </div>
+<div id="emoji-picker" class="emoji-picker hidden"></div>
 <script src="script.js"></script>
-<script>
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js');
-    }
-</script>
 </body>
 </html>
