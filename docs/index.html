@@ -45,7 +45,7 @@
                     <input type="text" id="new-habit-name" placeholder="New habit name...">
                     <button type="button" id="create-habit" class="btn-primary">Create Habit</button>
                 </div>
-                <div class="theme-toggle-wrapper">
+                <div class="header-icon-row">
                     <button id="habit-create-toggle" class="icon-toggle" type="button" aria-label="New habit">
                         &#x2795;
                     </button>
@@ -53,6 +53,10 @@
                         <span class="sun-icon">&#x2600;&#xFE0F;</span>
                         <span class="moon-icon">&#x1F319;</span>
                     </button>
+                    <div class="daily-date-inline">
+                        <button id="daily-date-btn" type="button" class="icon-toggle" aria-label="Pick date">📅</button>
+                        <input type="date" id="date" class="daily-date-input">
+                    </div>
                 </div>
             </div>
         </div>
@@ -120,9 +124,10 @@
 
             <section class="card">
                 <div class="header-actions-row">
-                    <h2 class="section-title">Weekly Snippets (Markdown)</h2>
+                    <button id="toggle-snippet-collapse" class="summary-title-btn section-title" type="button" aria-label="Toggle weekly snippets">
+                        Weekly Snippets (Markdown) <span class="summary-caret">▾</span>
+                    </button>
                     <div class="header-actions">
-                        <button id="toggle-snippet-collapse" class="btn-primary" style="background-color: #57606a;">Collapse</button>
                         <input type="week" id="snippet-week-picker" class="search-bar" style="width: auto;">
                         <button id="toggle-snippet-preview" class="btn-primary" style="background-color: #57606a;">Edit</button>
                         <button id="save-snippet" class="btn-primary">Save Snippet</button>
@@ -140,7 +145,6 @@
         <aside class="right-column">
             <section class="card protein-card">
                 <h2 class="section-title">Protein Intake</h2>
-                <input type="date" id="date" class="input-date">
                 <div class="protein-status-block">
                     <div class="protein-header">
                         <span class="current-total"><span id="protein-total-amount">0g</span></span>

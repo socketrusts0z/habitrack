@@ -1,4 +1,4 @@
-let selectedFoods = {}, habitToDelete = null, activeHabitName = null;
+let selectedFoods = {}, habitToDelete = null, activeHabitName = null, lastMenuAnchorRect = null;
 const EMOJI_OPTIONS = ['💧','🏃','🧘','📖','🥗','😴','🏋️','🧠','📝','🧹','🧑‍💻','🦷','🍵','🚶','🎧','🪴','🎯','🛌','🧴','🧊','🚰','🍎','🌞','🧘‍♂️','🧘‍♀️','🧠'];
 const DEFAULT_FOODS = [{ id: 101, name: 'Egg', protein_per_serving: 6 }, { id: 102, name: 'Whey Protein', protein_per_serving: 25 }];
 const el = (id) => document.getElementById(id);
@@ -74,7 +74,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const snippetCollapsed = await getData('snippet_collapsed');
     if (snippetCollapsed === true) {
         el('snippet-body')?.classList.add('collapsed');
-        el('toggle-snippet-collapse').textContent = 'Expand';
     }
 
     if ((await getData('food_list')).length === 0) await setData('food_list', DEFAULT_FOODS);
@@ -118,7 +117,8 @@ function setupEventListeners() {
         if (!el('emoji-picker').contains(e.target)) el('emoji-picker').classList.add('hidden');
     });
 
-    el('date')?.addEventListener('change', refreshDashboard);
+    el('date')?.addEventListener('change', () => { refreshDashboard(); });
+    el('daily-date-btn')?.addEventListener('click', () => el('date')?.showPicker?.() || el('date')?.click());
     el('performance-range-toggle').onclick = (e) => {
         e.stopPropagation();
         el('performance-range-menu').classList.toggle('hidden');
@@ -193,7 +193,6 @@ function setupEventListeners() {
     el('toggle-snippet-collapse').onclick = async () => {
         const body = el('snippet-body');
         const isCollapsed = body.classList.toggle('collapsed');
-        el('toggle-snippet-collapse').textContent = isCollapsed ? 'Expand' : 'Collapse';
         await setData('snippet_collapsed', isCollapsed);
     };
 
@@ -257,7 +256,7 @@ function setupEventListeners() {
         if (!habitToDelete) return;
         const menu = el('custom-context-menu');
         const picker = el('emoji-picker');
-        const r = menu.getBoundingClientRect();
+        const r = lastMenuAnchorRect || menu.getBoundingClientRect();
         picker.style.cssText = `top:${r.bottom + window.scrollY + 6}px;left:${r.left + window.scrollX}px;`;
         renderEmojiPicker(habitToDelete);
         picker.classList.remove('hidden');
@@ -315,6 +314,7 @@ function setupEventListeners() {
 
     el('clear-all-btn').onclick = async () => confirm("Clear all?") && (await clearAllData(), location.reload());
 }
+
 
 function setupGridHaptics() {
     const getGrid = (t) => t && t.closest && t.closest('.graph-day, .habit-day');
@@ -680,6 +680,7 @@ async function renderHabitTrackers() {
             const menu = el('custom-context-menu');
             menu.classList.remove('hidden');
             const r = menuBtn.getBoundingClientRect();
+            lastMenuAnchorRect = r;
             const m = menu.getBoundingClientRect();
             const left = Math.max(8, r.right + window.scrollX - m.width);
             const top = r.bottom + window.scrollY + 6;
