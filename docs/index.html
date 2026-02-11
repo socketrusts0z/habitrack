@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="HabiTrack">
-    <link rel="apple-touch-icon" href="icon.png"> <link rel="manifest" href="manifest.json">
-    <title>Habit Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0b1220">
+    <title>Habit Dashboard PWA</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
 <body>
 <div id="splash-screen" class="splash-overlay hidden">
@@ -39,8 +38,8 @@
             </div>
             <div class="header-actions">
                 <input type="text" id="new-habit-name" placeholder="New habit name...">
-                <button type="button" id="create-habit" class="btn-primary">Create</button>
-                <button type="button" id="share-weekly-card" class="btn-primary" style="background-color: #57606a;">Share</button>
+                <button type="button" id="create-habit" class="btn-primary">Create Habit</button>
+                <button type="button" id="share-weekly-card" class="btn-primary" style="background-color: #57606a;">Share Monthly Card</button>
                 <div class="theme-toggle-wrapper">
                     <button id="theme-toggle" title="Toggle Light/Dark Mode">
                         <span class="sun-icon">&#x2600;&#xFE0F;</span>
@@ -68,7 +67,7 @@
 
             <section class="card">
                 <div class="header-actions-row" style="margin-bottom: 0.5rem;">
-                    <h2 class="section-title" style="margin:0;">Screen Time</h2>
+                    <h2 class="section-title" style="margin:0;">Screen Time Trend</h2>
                     <div class="header-actions">
                         <input type="week" id="screen-week-picker" class="search-bar" style="width: auto; padding: 2px 8px; height: 24px;">
                         <select id="screen-time-range" class="search-bar" style="width: auto; padding: 2px 8px; height: 24px;">
@@ -85,12 +84,12 @@
 
             <section class="card">
                 <div class="header-actions-row">
-                    <h2 class="section-title">Weekly Journal</h2>
+                    <h2 class="section-title">Weekly Snippets (Markdown)</h2>
                     <div class="header-actions">
                         <button id="toggle-snippet-collapse" class="btn-primary" style="background-color: #57606a;">Collapse</button>
                         <input type="week" id="snippet-week-picker" class="search-bar" style="width: auto;">
                         <button id="toggle-snippet-preview" class="btn-primary" style="background-color: #57606a;">Edit</button>
-                        <button id="save-snippet" class="btn-primary">Save</button>
+                        <button id="save-snippet" class="btn-primary">Save Snippet</button>
                     </div>
                 </div>
                 <div id="snippet-body">
