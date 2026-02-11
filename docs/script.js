@@ -84,6 +84,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (el('habit-order')) el('habit-order').value = habitOrder;
     await refreshDashboard();
     setupEventListeners();
+    setupGridHaptics();
 });
 
 async function refreshDashboard() {
@@ -281,6 +282,25 @@ function setupEventListeners() {
     };
 
     el('clear-all-btn').onclick = async () => confirm("Clear all?") && (await clearAllData(), location.reload());
+}
+
+function setupGridHaptics() {
+    const applyTap = (el) => {
+        el.classList.add('grid-tap');
+        setTimeout(() => el.classList.remove('grid-tap'), 140);
+    };
+    document.addEventListener('click', (e) => {
+        const target = e.target;
+        if (target && (target.classList.contains('graph-day') || target.classList.contains('habit-day'))) {
+            applyTap(target);
+        }
+    });
+    document.addEventListener('touchstart', (e) => {
+        const target = e.target;
+        if (target && (target.classList.contains('graph-day') || target.classList.contains('habit-day'))) {
+            applyTap(target);
+        }
+    }, { passive: true });
 }
 
 async function buildMonthlyCardData() {
