@@ -11,16 +11,20 @@
 </head>
 <body>
 <div id="splash-screen" class="splash-overlay hidden">
-    <div class="splash-content">
-        <div class="splash-icon">&#x1F680;</div>
-        <h1>Welcome to HabiTrack</h1>
-        <p>Start your journey by creating your first habit!</p>
-        <div class="splash-action">
-            <input type="text" id="splash-habit-name" placeholder="e.g., Drink Water">
-            <button id="splash-create-btn" class="btn-primary">Get Started</button>
+        <div class="splash-content">
+            <div class="splash-icon">&#x1F680;</div>
+            <h1>Welcome to HabiTrack</h1>
+            <p>Start your journey by creating your first habit!</p>
+            <div class="splash-action">
+                <input type="text" id="splash-habit-name" placeholder="e.g., Drink Water">
+                <button id="splash-create-btn" class="btn-primary">Get Started</button>
+            </div>
+            <div class="splash-import">
+                <input type="file" id="splash-import-file" accept="application/json">
+                <button id="splash-import-btn" class="btn-primary" style="background-color: #57606a;">Import Backup</button>
+            </div>
         </div>
     </div>
-</div>
 
 <div class="app-container">
     <section class="insights-container">
@@ -185,15 +189,22 @@
             </section>
 
             <section class="card settings-card">
-                <h2 class="section-title">Data Management</h2>
-                <textarea id="import-json" placeholder="Paste JSON here to import..."></textarea>
-                <input type="file" id="import-file" accept="application/json" style="margin-top: 8px;">
-                <div style="display: flex; gap: 8px; margin-top: 8px;">
-                    <button id="import-btn" class="btn-primary" style="flex: 1; margin-top: 0;">Import</button>
-                    <button id="export-btn" class="btn-primary" style="flex: 1; margin-top: 0; background-color: #57606a;">Export</button>
+                <div class="header-actions-row" style="margin-bottom: 0.5rem;">
+                    <button id="data-management-toggle" class="summary-title-btn" type="button">
+                        <span>Data Management</span>
+                        <span class="summary-caret">▾</span>
+                    </button>
                 </div>
-                <div class="section-divider"></div>
-                <button id="clear-all-btn" class="btn-danger-outline" style="width:100%;">Clear All Data</button>
+                <div id="data-management-panel">
+                    <textarea id="import-json" placeholder="Paste JSON here to import..."></textarea>
+                    <input type="file" id="import-file" accept="application/json" style="margin-top: 8px;">
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button id="import-btn" class="btn-primary" style="flex: 1; margin-top: 0;">Import</button>
+                        <button id="export-btn" class="btn-primary" style="flex: 1; margin-top: 0; background-color: #57606a;">Export</button>
+                    </div>
+                    <div class="section-divider"></div>
+                    <button id="clear-all-btn" class="btn-danger-outline" style="width:100%;">Clear All Data</button>
+                </div>
             </section>
         </aside>
     </div>
