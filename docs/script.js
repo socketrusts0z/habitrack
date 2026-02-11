@@ -134,16 +134,6 @@ function setupEventListeners() {
 
     el('snippet-week-picker').onchange = loadSnippet;
 
-    el('share-weekly-card').onclick = async () => {
-        const data = await buildMonthlyCardData();
-        const url = await renderMonthlyCardImage(data);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `monthly-card-${data.endDate}.png`;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 2000);
-    };
-    
     el('save-snippet').onclick = async () => {
         const week = el('snippet-week-picker').value, content = el('snippet-input').value;
         const snips = (await getData('weekly_snippets')).filter(s => s.week !== week);

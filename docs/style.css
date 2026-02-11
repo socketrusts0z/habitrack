@@ -163,7 +163,7 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
 @media (max-width: 980px) {
     .app-container { padding: 1rem; }
     .dashboard-grid { grid-template-columns: 1fr; }
-    .right-column { order: -1; }
+    .right-column { order: 1; }
     .header-actions-row { flex-direction: column; align-items: flex-start; gap: 10px; }
     .header-actions { flex-wrap: wrap; }
     .habit-nav { padding-bottom: 6px; }
