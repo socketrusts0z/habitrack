@@ -285,22 +285,20 @@ function setupEventListeners() {
 }
 
 function setupGridHaptics() {
-    const applyTap = (el) => {
+    const getGrid = (t) => t && t.closest && t.closest('.graph-day, .habit-day');
+    const clearTap = (el) => el && el.classList.remove('grid-tap');
+    document.addEventListener('pointerdown', (e) => {
+        const el = getGrid(e.target);
+        if (!el) return;
         el.classList.add('grid-tap');
-        setTimeout(() => el.classList.remove('grid-tap'), 140);
-    };
-    document.addEventListener('click', (e) => {
-        const target = e.target;
-        if (target && (target.classList.contains('graph-day') || target.classList.contains('habit-day'))) {
-            applyTap(target);
-        }
-    });
-    document.addEventListener('touchstart', (e) => {
-        const target = e.target;
-        if (target && (target.classList.contains('graph-day') || target.classList.contains('habit-day'))) {
-            applyTap(target);
-        }
-    }, { passive: true });
+    }, true);
+    document.addEventListener('pointerup', (e) => {
+        const el = getGrid(e.target);
+        if (!el) return;
+        setTimeout(() => clearTap(el), 160);
+    }, true);
+    document.addEventListener('pointerleave', (e) => clearTap(getGrid(e.target)), true);
+    document.addEventListener('pointercancel', (e) => clearTap(getGrid(e.target)), true);
 }
 
 async function buildMonthlyCardData() {

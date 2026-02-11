@@ -83,8 +83,9 @@ body {
 .section-title { font-size: 1rem; font-weight: 700; margin-top: 0; margin-bottom: 0.9rem; }
     
     .grid-display, .habit-grid-instance { display: flex; flex-wrap: wrap; gap: 3px; user-select: none; max-width: 100%; min-width: 0; }
-    .graph-day, .habit-day { width: 11px; height: 11px; border-radius: 2px; background-color: var(--lvl-0); cursor: pointer; outline: 1px solid rgba(27, 31, 35, 0.04); transition: transform 120ms ease, box-shadow 120ms ease; }
-    .grid-tap { transform: scale(0.96); box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18); }
+    .graph-day, .habit-day { width: 11px; height: 11px; border-radius: 2px; background-color: var(--lvl-0); cursor: pointer; outline: 1px solid rgba(27, 31, 35, 0.04); transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease; transform-origin: center; will-change: transform; }
+    .grid-tap { transform: scale(0.85) !important; box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25); filter: brightness(1.08); }
+    .graph-day:active, .habit-day:active { transform: scale(0.85); box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25); filter: brightness(1.08); }
     .level-1 { background-color: var(--lvl-1); } .level-2 { background-color: var(--lvl-2); }
     .level-3 { background-color: var(--lvl-3); } .level-4 { background-color: var(--lvl-4); }
     
