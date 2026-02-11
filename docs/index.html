@@ -37,9 +37,14 @@
                 </div>
             </div>
             <div class="header-actions">
-                <input type="text" id="new-habit-name" placeholder="New habit name...">
-                <button type="button" id="create-habit" class="btn-primary">Create Habit</button>
+                <div id="habit-create-panel" class="header-actions">
+                    <input type="text" id="new-habit-name" placeholder="New habit name...">
+                    <button type="button" id="create-habit" class="btn-primary">Create Habit</button>
+                </div>
                 <div class="theme-toggle-wrapper">
+                    <button id="habit-create-toggle" class="icon-toggle" type="button" aria-label="New habit">
+                        &#x2795;
+                    </button>
                     <button id="theme-toggle" title="Toggle Light/Dark Mode">
                         <span class="sun-icon">&#x2600;&#xFE0F;</span>
                         <span class="moon-icon">&#x1F319;</span>

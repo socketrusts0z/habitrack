@@ -24,12 +24,13 @@
 }
 
 /* THEME TOGGLE STYLES - FIXED OVERLAP */
-    .theme-toggle-wrapper {
+.theme-toggle-wrapper {
     display: flex;
     align-items: center;
+    gap: 8px;
     }
     
-    #theme-toggle {
+#theme-toggle {
     background: var(--subtle-bg);
     border: 1px solid var(--border);
     padding: 0;
@@ -40,9 +41,26 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 22px;
+    line-height: 1;
     transition: all 0.2s;
     }
+
+.icon-toggle {
+    background: var(--subtle-bg);
+    border: 1px solid var(--border);
+    padding: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+.icon-toggle:hover { border-color: var(--primary); transform: scale(1.05); }
     
     #theme-toggle:hover { border-color: var(--primary); transform: scale(1.05); }
     
@@ -68,6 +86,7 @@ body {
 .summary-menu { position: absolute; top: 28px; left: 0; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 6px; min-width: 160px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); z-index: 1000; }
 .summary-menu-item { width: 100%; text-align: left; padding: 8px 10px; border: none; background: transparent; font-size: 13px; color: var(--text-main); border-radius: 6px; cursor: pointer; }
 .summary-menu-item:hover { background: var(--subtle-bg); }
+    .habit-create-hidden { display: none; }
     .insights-container { margin-bottom: 0.5rem; }
 .insights-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
     
@@ -177,7 +196,7 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
     .app-container { padding: 0.75rem; }
     .card { padding: 1rem; border-radius: 14px; }
     .section-title { font-size: 1.1rem; }
-    .header-actions-row { gap: 12px; }
+    .header-actions-row { gap: 12px; position: relative; }
     .header-actions { width: 100%; flex-direction: column; align-items: stretch; }
     .header-actions > * { width: 100%; }
     .summary-title-btn { font-size: 1.05rem; }
@@ -198,9 +217,15 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
     .habit-nav { gap: 6px; padding-bottom: 4px; }
     .habit-nav-item { padding: 10px 12px; font-size: 14px; max-width: 180px; }
     .habit-nav-item .habit-name { max-width: 140px; }
-    #theme-toggle { width: 44px; height: 44px; font-size: 18px; }
+    #theme-toggle { width: 44px; height: 44px; font-size: 22px; }
+    .icon-toggle { width: 44px; height: 44px; font-size: 22px; }
+    .sun-icon, .moon-icon { font-size: 22px; line-height: 1; display: inline-block; }
+    .moon-icon { display: none; }
+    [data-theme="dark"] .sun-icon { display: none; }
+    [data-theme="dark"] .moon-icon { display: inline-block; }
     #custom-context-menu { font-size: 14px; }
     .settings-card .section-divider { margin: 1rem 0; }
     .settings-card [style*="display: flex"] { flex-direction: column !important; }
     .settings-card [style*="display: flex"] > * { width: 100% !important; }
+    #habit-create-panel { margin-top: 8px; }
 }

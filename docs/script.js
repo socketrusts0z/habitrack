@@ -63,6 +63,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const perfRange = await getData('performance_range');
     if (!perfRange || Array.isArray(perfRange)) await setData('performance_range', 'weekly');
+    const habitCreateOpen = await getData('habit_create_open');
+    if (habitCreateOpen === false) {
+        el('habit-create-panel')?.classList.add('habit-create-hidden');
+    }
     const snippetCollapsed = await getData('snippet_collapsed');
     if (snippetCollapsed === true) {
         el('snippet-body')?.classList.add('collapsed');
@@ -114,6 +118,12 @@ function setupEventListeners() {
     el('performance-range-toggle').onclick = (e) => {
         e.stopPropagation();
         el('performance-range-menu').classList.toggle('hidden');
+    };
+    el('habit-create-toggle').onclick = async (e) => {
+        e.stopPropagation();
+        const panel = el('habit-create-panel');
+        const isHidden = panel.classList.toggle('habit-create-hidden');
+        await setData('habit_create_open', !isHidden);
     };
     document.addEventListener('click', () => {
         el('performance-range-menu')?.classList.add('hidden');
