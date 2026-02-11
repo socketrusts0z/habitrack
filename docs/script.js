@@ -245,6 +245,17 @@ function setupEventListeners() {
             location.reload();
         } catch { alert("Invalid JSON"); }
     };
+    el('import-file').onchange = async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        try {
+            const text = await file.text();
+            const parsed = JSON.parse(text);
+            if (isExtensionStorage) await chrome.storage.local.set(parsed);
+            else Object.entries(parsed).forEach(([k, v]) => localStorage.setItem(k, JSON.stringify(v)));
+            location.reload();
+        } catch { alert("Invalid JSON file"); }
+    };
 
     el('export-btn').onclick = async () => {
         const data = await exportAllData();
