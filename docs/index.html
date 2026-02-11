@@ -105,44 +105,6 @@
                 <div id="graph" class="grid-display"></div>
             </section>
 
-            <section class="card">
-                <div class="header-actions-row" style="margin-bottom: 0.5rem;">
-                    <h2 class="section-title" style="margin:0;">Screen Time Trend</h2>
-                    <div class="header-actions">
-                        <input type="week" id="screen-week-picker" class="search-bar" style="width: auto; padding: 2px 8px; height: 24px;">
-                        <select id="screen-time-range" class="search-bar" style="width: auto; padding: 2px 8px; height: 24px;">
-                            <option value="7" selected>7 Days</option>
-                            <option value="14">14 Days</option>
-                            <option value="30">30 Days</option>
-                        </select>
-                    </div>
-                </div>
-                <div id="screen-time-container" style="height: 180px; width: 100%; padding-top: 10px;">
-                    <svg id="screen-time-svg" style="width:100%; height:100%; overflow: visible;"></svg>
-                </div>
-            </section>
-
-            <section class="card">
-                <div class="header-actions-row">
-                    <button id="toggle-snippet-collapse" class="summary-title-btn section-title" type="button" aria-label="Toggle weekly snippets">
-                        Weekly Snippets (Markdown) <span class="summary-caret">▾</span>
-                    </button>
-                    <div class="header-actions">
-                        <input type="week" id="snippet-week-picker" class="search-bar" style="width: auto;">
-                        <button id="toggle-snippet-preview" class="btn-primary" style="background-color: #57606a;">Edit</button>
-                        <button id="save-snippet" class="btn-primary">Save Snippet</button>
-                    </div>
-                </div>
-                <div id="snippet-body">
-                    <div id="snippet-editor-container" class="hidden">
-                        <textarea id="snippet-input" placeholder="How was your week? Use **Markdown** here..." style="width: 100%; height: 180px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-family: monospace; resize: vertical;"></textarea>
-                    </div>
-                    <div id="snippet-preview-container" style="min-height: 180px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--subtle-bg); overflow-y: auto;"></div>
-                </div>
-            </section>
-        </div>
-
-        <aside class="right-column">
             <section class="card protein-card">
                 <h2 class="section-title">Protein Intake</h2>
                 <div class="protein-status-block">
@@ -184,6 +146,23 @@
             </section>
 
             <section class="card">
+                <div class="header-actions-row" style="margin-bottom: 0.5rem;">
+                    <h2 class="section-title" style="margin:0;">Screen Time Trend</h2>
+                    <div class="header-actions">
+                        <input type="week" id="screen-week-picker" class="search-bar" style="width: auto; padding: 2px 8px; height: 24px;">
+                        <select id="screen-time-range" class="search-bar" style="width: auto; padding: 2px 8px; height: 24px;">
+                            <option value="7" selected>7 Days</option>
+                            <option value="14">14 Days</option>
+                            <option value="30">30 Days</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="screen-time-container" style="height: 180px; width: 100%; padding-top: 10px;">
+                    <svg id="screen-time-svg" style="width:100%; height:100%; overflow: visible;"></svg>
+                </div>
+            </section>
+
+            <section class="card">
                 <h2 class="section-title">Log Screen Time</h2>
                 <div style="display: flex; gap: 8px;">
                     <input type="number" id="screen-hours" placeholder="Hrs" min="0">
@@ -192,6 +171,27 @@
                 <button type="button" id="save-screen-time" class="btn-success" style="margin-top: 10px;">Save Screen Time</button>
             </section>
 
+            <section class="card">
+                <div class="header-actions-row">
+                    <button id="toggle-snippet-collapse" class="summary-title-btn section-title" type="button" aria-label="Toggle weekly snippets">
+                        Weekly Snippets (Markdown) <span class="summary-caret">▾</span>
+                    </button>
+                    <div class="header-actions">
+                        <input type="week" id="snippet-week-picker" class="search-bar" style="width: auto;">
+                        <button id="toggle-snippet-preview" class="btn-primary" style="background-color: #57606a;">Edit</button>
+                        <button id="save-snippet" class="btn-primary">Save Snippet</button>
+                    </div>
+                </div>
+                <div id="snippet-body">
+                    <div id="snippet-editor-container" class="hidden">
+                        <textarea id="snippet-input" placeholder="How was your week? Use **Markdown** here..." style="width: 100%; height: 180px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-family: monospace; resize: vertical;"></textarea>
+                    </div>
+                    <div id="snippet-preview-container" style="min-height: 180px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--subtle-bg); overflow-y: auto;"></div>
+                </div>
+            </section>
+        </div>
+
+        <aside class="right-column">
             <section class="card settings-card">
                 <div class="header-actions-row" style="margin-bottom: 0.5rem;">
                     <button id="data-management-toggle" class="summary-title-btn" type="button">
