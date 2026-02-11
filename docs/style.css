@@ -127,7 +127,8 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
     padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
     background: var(--subtle-bg); font-size: 15px; width: 100%; color: var(--text-main);
     }
-.input-date { width: 100%; max-width: 100%; min-width: 0; display: block; }
+.input-date { width: calc(100% - 8px); max-width: calc(100% - 8px); min-width: 0; display: block; margin: 0 4px; box-sizing: border-box; -webkit-appearance: none; appearance: none; }
+.protein-card { overflow: hidden; }
 .btn-primary, .btn-success { background: var(--primary); color: white; border: 1px solid rgba(27,31,35,0.15); padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; }
     .btn-success { width: 100%; }
     
