@@ -72,10 +72,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     if ((await getData('food_list')).length === 0) await setData('food_list', DEFAULT_FOODS);
     const proteinRange = (await getData('protein_range')) || 'last365';
     const habitRange = (await getData('habit_range')) || 'last365';
+    const proteinOrder = (await getData('protein_order')) || 'asc';
+    const habitOrder = (await getData('habit_order')) || 'asc';
     await setData('protein_range', proteinRange);
     await setData('habit_range', habitRange);
+    await setData('protein_order', proteinOrder);
+    await setData('habit_order', habitOrder);
     if (el('protein-range')) el('protein-range').value = proteinRange;
     if (el('habit-range')) el('habit-range').value = habitRange;
+    if (el('protein-order')) el('protein-order').value = proteinOrder;
+    if (el('habit-order')) el('habit-order').value = habitOrder;
     await refreshDashboard();
     setupEventListeners();
 });
@@ -122,6 +128,8 @@ function setupEventListeners() {
     el('screen-time-range').onchange = renderScreenTimeChart;
     el('protein-range').onchange = async (e) => { await setData('protein_range', e.target.value); renderGraph(); };
     el('habit-range').onchange = async (e) => { await setData('habit_range', e.target.value); renderHabitTrackers(); };
+    el('protein-order').onchange = async (e) => { await setData('protein_order', e.target.value); renderGraph(); };
+    el('habit-order').onchange = async (e) => { await setData('habit_order', e.target.value); renderHabitTrackers(); };
     el('screen-week-picker').onchange = renderScreenTimeChart;
 
     el('submit').onclick = async () => {
@@ -590,9 +598,11 @@ async function renderGraph() {
     const data = await getData('protein_intake'), g = el('graph');
     if (!g) return; g.innerHTML = '';
     const rangeKey = (await getData('protein_range')) || 'last365';
+    const orderKey = (await getData('protein_order')) || 'asc';
     const { dates } = getDisplayRange(rangeKey);
-    for (let i = dates.length - 1; i >= 0; i--) {
-        const s = dates[i];
+    const displayDates = orderKey === 'desc' ? dates.slice().reverse() : dates;
+    for (let i = 0; i < displayDates.length; i++) {
+        const s = displayDates[i];
         const v = data.find(x => x.date === s)?.protein_grams || 0;
         const lvl = v === 0 ? 0 : v < 50 ? 1 : v < 100 ? 2 : v < 150 ? 3 : 4;
         const day = document.createElement('div'); day.className = `graph-day level-${lvl}`; day.title = `${s}: ${v}g`;
@@ -667,10 +677,12 @@ async function renderHabitGraph(name) {
     const hist = await getData('habit_history'), g = el(`habit-${name}`);
     if (!g) return;
     const rangeKey = (await getData('habit_range')) || 'last365';
+    const orderKey = (await getData('habit_order')) || 'asc';
     const { dates } = getDisplayRange(rangeKey);
+    const displayDates = orderKey === 'desc' ? dates.slice().reverse() : dates;
     g.innerHTML = '';
-    for (let i = dates.length - 1; i >= 0; i--) {
-        const s = dates[i];
+    for (let i = 0; i < displayDates.length; i++) {
+        const s = displayDates[i];
         const done = hist.find(x => x.habit_name === name && x.date === s)?.performed;
         const day = document.createElement('div');
         day.onclick = async () => {
@@ -678,6 +690,7 @@ async function renderHabitGraph(name) {
             const idx = h.findIndex(x => x.habit_name === name && x.date === s);
             idx > -1 ? h[idx].performed = h[idx].performed ? 0 : 1 : h.push({ date: s, habit_name: name, performed: 1 });
             await setData('habit_history', h); renderHabitGraph(name); updateWeeklyInsights();
+            showToast(`${name} • ${s}`);
         };
         day.className = `habit-day ${done ? 'level-3' : 'level-0'}`; day.title = s;
         g.appendChild(day);
