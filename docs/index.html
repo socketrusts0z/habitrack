@@ -53,14 +53,34 @@
     <div class="dashboard-grid">
         <div class="left-column">
             <section class="card">
-                <h2 class="section-title">Habit Mastery</h2>
+                <div class="header-actions-row" style="margin-bottom: 0.5rem;">
+                    <h2 class="section-title" style="margin:0;">Habit Mastery</h2>
+                    <div class="header-actions">
+                        <select id="habit-range" class="search-bar" style="width: auto; padding: 2px 8px; height: 24px;">
+                            <option value="year">Current Year</option>
+                            <option value="last365" selected>Last 365 Days</option>
+                            <option value="month">Current Month</option>
+                            <option value="week">Current Week</option>
+                        </select>
+                    </div>
+                </div>
                 <nav id="habit-navigation" class="habit-nav"></nav>
                 <div id="hidden-habits" class="hidden-habits hidden"></div>
                 <div id="habit-grid-container" class="grid-wrapper"></div>
             </section>
 
             <section class="card">
-                <h2 class="section-title">Yearly Protein Activity</h2>
+                <div class="header-actions-row" style="margin-bottom: 0.5rem;">
+                    <h2 class="section-title" style="margin:0;">Protein Activity</h2>
+                    <div class="header-actions">
+                        <select id="protein-range" class="search-bar" style="width: auto; padding: 2px 8px; height: 24px;">
+                            <option value="year">Current Year</option>
+                            <option value="last365" selected>Last 365 Days</option>
+                            <option value="month">Current Month</option>
+                            <option value="week">Current Week</option>
+                        </select>
+                    </div>
+                </div>
                 <div id="graph" class="grid-display"></div>
             </section>
 

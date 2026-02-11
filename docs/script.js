@@ -70,6 +70,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if ((await getData('food_list')).length === 0) await setData('food_list', DEFAULT_FOODS);
+    const proteinRange = (await getData('protein_range')) || 'last365';
+    const habitRange = (await getData('habit_range')) || 'last365';
+    await setData('protein_range', proteinRange);
+    await setData('habit_range', habitRange);
+    if (el('protein-range')) el('protein-range').value = proteinRange;
+    if (el('habit-range')) el('habit-range').value = habitRange;
     await refreshDashboard();
     setupEventListeners();
 });
@@ -114,6 +120,8 @@ function setupEventListeners() {
         };
     });
     el('screen-time-range').onchange = renderScreenTimeChart;
+    el('protein-range').onchange = async (e) => { await setData('protein_range', e.target.value); renderGraph(); };
+    el('habit-range').onchange = async (e) => { await setData('habit_range', e.target.value); renderHabitTrackers(); };
     el('screen-week-picker').onchange = renderScreenTimeChart;
 
     el('submit').onclick = async () => {
@@ -581,9 +589,11 @@ function updateStatCard(cont, title, val, streak = 0, pb = 0, displayTitle = nul
 async function renderGraph() {
     const data = await getData('protein_intake'), g = el('graph');
     if (!g) return; g.innerHTML = '';
-    for (let i = 365; i >= 0; i--) {
-        const d = new Date(); d.setDate(d.getDate() - i);
-        const s = getLocalDateString(d), v = data.find(x => x.date === s)?.protein_grams || 0;
+    const rangeKey = (await getData('protein_range')) || 'last365';
+    const { dates } = getDisplayRange(rangeKey);
+    for (let i = dates.length - 1; i >= 0; i--) {
+        const s = dates[i];
+        const v = data.find(x => x.date === s)?.protein_grams || 0;
         const lvl = v === 0 ? 0 : v < 50 ? 1 : v < 100 ? 2 : v < 150 ? 3 : 4;
         const day = document.createElement('div'); day.className = `graph-day level-${lvl}`; day.title = `${s}: ${v}g`;
         day.onclick = () => { el('date').value = s; refreshDashboard(); };
@@ -656,22 +666,46 @@ async function renderHabitTrackers() {
 async function renderHabitGraph(name) {
     const hist = await getData('habit_history'), g = el(`habit-${name}`);
     if (!g) return;
-    const isNew = g.children.length === 0;
-    for (let i = 365; i >= 0; i--) {
-        const d = new Date(); d.setDate(d.getDate() - i);
-        const s = getLocalDateString(d), done = hist.find(x => x.habit_name === name && x.date === s)?.performed;
-        let day = isNew ? document.createElement('div') : g.children[365 - i];
-        if (isNew) {
-            day.onclick = async () => {
-                let h = await getData('habit_history');
-                const idx = h.findIndex(x => x.habit_name === name && x.date === s);
-                idx > -1 ? h[idx].performed = h[idx].performed ? 0 : 1 : h.push({ date: s, habit_name: name, performed: 1 });
-                await setData('habit_history', h); renderHabitGraph(name); updateWeeklyInsights();
-            };
-            g.appendChild(day);
-        }
+    const rangeKey = (await getData('habit_range')) || 'last365';
+    const { dates } = getDisplayRange(rangeKey);
+    g.innerHTML = '';
+    for (let i = dates.length - 1; i >= 0; i--) {
+        const s = dates[i];
+        const done = hist.find(x => x.habit_name === name && x.date === s)?.performed;
+        const day = document.createElement('div');
+        day.onclick = async () => {
+            let h = await getData('habit_history');
+            const idx = h.findIndex(x => x.habit_name === name && x.date === s);
+            idx > -1 ? h[idx].performed = h[idx].performed ? 0 : 1 : h.push({ date: s, habit_name: name, performed: 1 });
+            await setData('habit_history', h); renderHabitGraph(name); updateWeeklyInsights();
+        };
         day.className = `habit-day ${done ? 'level-3' : 'level-0'}`; day.title = s;
+        g.appendChild(day);
     }
+}
+
+function getDisplayRange(range) {
+    const today = new Date();
+    if (range === 'year') {
+        const start = new Date(today.getFullYear(), 0, 1);
+        const dates = [];
+        const d = new Date(start);
+        while (d <= today) { dates.push(getLocalDateString(d)); d.setDate(d.getDate() + 1); }
+        return { dates };
+    }
+    if (range === 'month') {
+        const start = new Date(today.getFullYear(), today.getMonth(), 1);
+        const dates = [];
+        const d = new Date(start);
+        while (d <= today) { dates.push(getLocalDateString(d)); d.setDate(d.getDate() + 1); }
+        return { dates };
+    }
+    if (range === 'week') {
+        const dates = Array.from({ length: 7 }, (_, i) => getLocalDateString(new Date(Date.now() - i * 864e5)));
+        return { dates };
+    }
+    const dates = Array.from({ length: 365 }, (_, i) => getLocalDateString(new Date(Date.now() - i * 864e5)));
+    return { dates };
 }
 
 async function renderFoods() {
