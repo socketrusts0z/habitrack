@@ -55,6 +55,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (await getData('theme_preference') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
     if (el('date')) el('date').value = getLocalDateString();
+    updateDailyDateDisplay();
     
     const now = new Date();
     const currentWeekStr = `${now.getFullYear()}-W${getWeekNumber(now).toString().padStart(2, '0')}`;
@@ -117,7 +118,7 @@ function setupEventListeners() {
         if (!el('emoji-picker').contains(e.target)) el('emoji-picker').classList.add('hidden');
     });
 
-    el('date')?.addEventListener('change', () => { refreshDashboard(); });
+    el('date')?.addEventListener('change', () => { updateDailyDateDisplay(); refreshDashboard(); });
     el('daily-date-btn')?.addEventListener('click', () => el('date')?.showPicker?.() || el('date')?.click());
     el('performance-range-toggle').onclick = (e) => {
         e.stopPropagation();
@@ -313,6 +314,15 @@ function setupEventListeners() {
     };
 
     el('clear-all-btn').onclick = async () => confirm("Clear all?") && (await clearAllData(), location.reload());
+}
+
+function updateDailyDateDisplay() {
+    const input = el('date');
+    const label = el('daily-date-display');
+    if (!input || !label) return;
+    const value = input.value || getLocalDateString();
+    const parts = value.split('-');
+    label.textContent = parts.length === 3 ? `${parts[1]}/${parts[2]}` : value;
 }
 
 

@@ -82,9 +82,30 @@ body {
     transition: background-color 0.3s, color 0.3s;
 }
 .app-container { max-width: 1200px; margin: 0 auto; padding: 1.25rem 2rem; width: 100%; }
-.daily-date-inline { display: flex; align-items: center; }
-.daily-date-inline .icon-toggle { width: 32px; height: 32px; }
-.daily-date-input { width: 0; height: 0; opacity: 0; border: 0; padding: 0; }
+.daily-date-inline {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 64px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--subtle-bg);
+}
+.daily-date-display { font-size: 11px; color: var(--text-main); letter-spacing: 0.02em; }
+.daily-date-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.02;
+    border: 0;
+    background: transparent;
+    color: transparent;
+    -webkit-appearance: none;
+}
 .header-actions-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
 .header-actions { display: flex; gap: 8px; align-items: center; }
 .header-icon-row { display: flex; align-items: center; gap: 8px; }
@@ -231,7 +252,8 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
     .habit-nav-item .habit-name { max-width: 140px; }
     #theme-toggle { width: 44px; height: 44px; font-size: 22px; }
     .icon-toggle { width: 44px; height: 44px; min-width: 44px; min-height: 44px; font-size: 22px; }
-    .daily-date-inline .icon-toggle { width: 44px; height: 44px; }
+    .daily-date-inline { height: 44px; min-width: 76px; }
+    .daily-date-display { font-size: 12px; }
     .sun-icon, .moon-icon { font-size: 22px; line-height: 1; display: inline-block; }
     .moon-icon { display: none; }
     [data-theme="dark"] .sun-icon { display: none; }
