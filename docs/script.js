@@ -677,7 +677,12 @@ async function renderGraph() {
         const v = data.find(x => x.date === s)?.protein_grams || 0;
         const lvl = v === 0 ? 0 : v < 50 ? 1 : v < 100 ? 2 : v < 150 ? 3 : 4;
         const day = document.createElement('div'); day.className = `graph-day level-${lvl}`; day.title = `${s}: ${v}g`;
-        day.onclick = () => { el('date').value = s; refreshDashboard(); };
+        day.onclick = () => {
+            const dateInput = el('date');
+            if (!dateInput) return;
+            dateInput.value = s;
+            dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+        };
         g.appendChild(day);
     }
 }
