@@ -714,10 +714,10 @@ function getDisplayRange(range) {
         return { dates };
     }
     if (range === 'week') {
-        const dates = Array.from({ length: 7 }, (_, i) => getLocalDateString(new Date(Date.now() - i * 864e5)));
+        const dates = Array.from({ length: 7 }, (_, i) => getLocalDateString(new Date(Date.now() - i * 864e5))).reverse();
         return { dates };
     }
-    const dates = Array.from({ length: 365 }, (_, i) => getLocalDateString(new Date(Date.now() - i * 864e5)));
+    const dates = Array.from({ length: 365 }, (_, i) => getLocalDateString(new Date(Date.now() - i * 864e5))).reverse();
     return { dates };
 }
 
