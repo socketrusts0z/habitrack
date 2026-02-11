@@ -601,14 +601,19 @@ async function renderHabitTrackers() {
     visibleHabits.forEach(h => {
         const btn = document.createElement('div'); btn.className = 'habit-nav-item'; btn.dataset.habit = h;
         const emoji = icons[h] ? `<span class="habit-emoji">${icons[h]}</span>` : '';
-        btn.innerHTML = `${emoji}<span class="habit-name">${h}</span>`;
-        btn.onclick = () => showHabitGrid(h);
-        btn.oncontextmenu = (e) => {
-            e.preventDefault(); habitToDelete = h;
-            el('custom-context-menu').style.cssText = `top:${e.clientY}px;left:${e.clientX}px;`;
-            el('custom-context-menu').classList.remove('hidden');
+        btn.innerHTML = `<span class="habit-label">${emoji}<span class="habit-name">${h}</span></span><button class="habit-menu-btn" type="button" aria-label="Habit menu">⋮</button>`;
+        btn.querySelector('.habit-label').onclick = () => showHabitGrid(h);
+        const menuBtn = btn.querySelector('.habit-menu-btn');
+        menuBtn.onclick = (e) => {
+            e.stopPropagation(); habitToDelete = h;
+            const menu = el('custom-context-menu');
+            menu.classList.remove('hidden');
+            const r = menuBtn.getBoundingClientRect();
+            const m = menu.getBoundingClientRect();
+            const left = Math.max(8, r.right + window.scrollX - m.width);
+            const top = r.bottom + window.scrollY + 6;
+            menu.style.cssText = `top:${top}px;left:${left}px;`;
         };
-        attachHabitLongPress(btn, h);
         nav.appendChild(btn);
         if (!el(`habit-${h}`)) {
             const g = document.createElement('div'); g.id = `habit-${h}`; g.className = 'habit-grid-instance hidden';
@@ -721,48 +726,6 @@ function showHabitGrid(name) {
     document.querySelectorAll('.habit-nav-item').forEach(i => i.classList.toggle('active', i.dataset.habit === name));
 }
 
-function attachHabitLongPress(elm, habitName) {
-    let timer = null;
-    let fired = false;
-    const start = (e) => {
-        if (e.touches && e.touches.length > 1) return;
-        if (e.cancelable) e.preventDefault();
-        e.stopPropagation();
-        fired = false;
-        timer = setTimeout(() => {
-            fired = true;
-            habitToDelete = habitName;
-            const t = e.touches ? e.touches[0] : e;
-            el('custom-context-menu').style.cssText = `top:${t.clientY}px;left:${t.clientX}px;`;
-            el('custom-context-menu').classList.remove('hidden');
-        }, 550);
-    };
-    const cancel = () => {
-        if (timer) { clearTimeout(timer); timer = null; }
-    };
-    elm.addEventListener('touchstart', start, { passive: false });
-    elm.addEventListener('touchend', (e) => {
-        if (fired) {
-            if (e.cancelable) e.preventDefault();
-            e.stopPropagation();
-        } else {
-            elm.click();
-        }
-        cancel();
-    });
-    elm.addEventListener('touchcancel', cancel);
-    elm.addEventListener('touchmove', cancel);
-    elm.addEventListener('contextmenu', (e) => e.preventDefault());
-    elm.addEventListener('pointerdown', (e) => {
-        if (e.pointerType === 'touch') start(e);
-    });
-    elm.addEventListener('pointerup', (e) => {
-        if (e.pointerType === 'touch') {
-            if (fired && e.cancelable) e.preventDefault();
-            cancel();
-        }
-    });
-}
 
 function showToast(m) {
     const t = document.createElement('div'); t.className = 'toast'; t.textContent = m;
