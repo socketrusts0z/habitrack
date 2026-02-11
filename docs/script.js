@@ -76,23 +76,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (snippetCollapsed === true) {
         el('snippet-body')?.classList.add('collapsed');
     }
-    const screenRange = (await getData('screen_time_range')) || '7';
-    await setData('screen_time_range', screenRange);
-    if (el('screen-time-range')) el('screen-time-range').value = screenRange;
 
     if ((await getData('food_list')).length === 0) await setData('food_list', DEFAULT_FOODS);
     const proteinRange = (await getData('protein_range')) || 'last365';
     const habitRange = (await getData('habit_range')) || 'last365';
     const proteinOrder = (await getData('protein_order')) || 'asc';
     const habitOrder = (await getData('habit_order')) || 'asc';
+    let screenTimeRange = await getData('screen_time_range');
+    if (!screenTimeRange || Array.isArray(screenTimeRange)) screenTimeRange = '7';
     await setData('protein_range', proteinRange);
     await setData('habit_range', habitRange);
     await setData('protein_order', proteinOrder);
     await setData('habit_order', habitOrder);
+    await setData('screen_time_range', screenTimeRange);
     if (el('protein-range')) el('protein-range').value = proteinRange;
     if (el('habit-range')) el('habit-range').value = habitRange;
     if (el('protein-order')) el('protein-order').value = proteinOrder;
     if (el('habit-order')) el('habit-order').value = habitOrder;
+    if (el('screen-time-range')) el('screen-time-range').value = screenTimeRange;
     await refreshDashboard();
     setupEventListeners();
     setupGridHaptics();
@@ -150,7 +151,12 @@ function setupEventListeners() {
             updateWeeklyInsights();
         };
     });
-    el('screen-time-range').onchange = async (e) => { await setData('screen_time_range', e.target.value); renderScreenTimeChart(); };
+    if (el('screen-time-range')) {
+        el('screen-time-range').onchange = async (e) => {
+            await setData('screen_time_range', e.target.value);
+            renderScreenTimeChart();
+        };
+    }
     el('protein-range').onchange = async (e) => { await setData('protein_range', e.target.value); renderGraph(); };
     el('habit-range').onchange = async (e) => { await setData('habit_range', e.target.value); renderHabitTrackers(); };
     el('protein-order').onchange = async (e) => { await setData('protein_order', e.target.value); renderGraph(); };
@@ -519,9 +525,11 @@ function toggleSnippet(toPreview) {
 
 async function renderScreenTimeChart() {
     const svg = el('screen-time-svg'), 
-          range = parseInt(el('screen-time-range').value), 
-          weekVal = el('screen-week-picker').value,
+          rangeRaw = el('screen-time-range')?.value,
+          weekVal = el('screen-week-picker')?.value,
           data = await getData('screentime_history');
+    let range = parseInt(rangeRaw, 10);
+    if (!Number.isFinite(range) || range < 2) range = 7;
     
     if (!svg) return;
     svg.innerHTML = '';
