@@ -244,7 +244,7 @@ body {
 .food-grid-quick { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
 .food-box { background: var(--subtle-bg); border: 1px solid var(--border); padding: 8px 6px 7px; border-radius: 8px; font-size: 12px; cursor: pointer; min-height: 66px; display: flex; align-items: flex-start; justify-content: space-between; flex-direction: column; gap: 6px; line-height: 1.15; position: relative; text-align: left; }
     .food-box:hover { border-color: var(--primary); }
-    .food-name { font-weight: 600; color: var(--text-main); max-width: 100%; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; min-height: 28px; word-break: break-word; }
+    .food-name { font-weight: 600; color: var(--text-main); max-width: 100%; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; min-height: 28px; word-break: break-word; padding-right: 18px; }
     .food-protein-badge { font-weight: 700; font-size: 11px; letter-spacing: 0.2px; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 999px; padding: 2px 7px; align-self: flex-start; max-width: 100%; white-space: nowrap; }
     .food-box .delete-food-btn { position: absolute; top: 4px; right: 6px; font-size: 12px; color: var(--text-muted); opacity: 0.6; line-height: 1; }
     .food-box:hover .delete-food-btn { opacity: 1; }
