@@ -224,6 +224,12 @@ function setupEventListeners() {
 
     el('date')?.addEventListener('change', () => { updateDailyDateDisplay(); refreshDashboard(); });
     el('daily-date-btn')?.addEventListener('click', () => el('date')?.showPicker?.() || el('date')?.click());
+    el('jump-to-today')?.addEventListener('click', () => {
+        const input = el('date');
+        if (!input) return;
+        input.value = getLocalDateString();
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
     el('performance-range-toggle').onclick = (e) => {
         e.stopPropagation();
         el('performance-range-menu').classList.toggle('hidden');
