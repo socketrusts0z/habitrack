@@ -96,6 +96,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (el('screen-time-range')) el('screen-time-range').value = screenTimeRange;
     await refreshDashboard();
     setupEventListeners();
+    await setupMobileTabs();
     setupGridHaptics();
 });
 
@@ -104,9 +105,108 @@ async function refreshDashboard() {
     await loadDailySelections(el('date').value);
     await renderGraph();
     await renderHabitTrackers();
+    await renderTodayHabitList();
     await updateWeeklyInsights();
     await renderScreenTimeChart();
     await loadSnippet();
+}
+
+async function setupMobileTabs() {
+    const buttons = Array.from(document.querySelectorAll('.mobile-tab-btn'));
+    const panels = Array.from(document.querySelectorAll('.mobile-tab-section'));
+    if (!buttons.length || !panels.length) return;
+
+    const allowedTabs = new Set(buttons.map((btn) => btn.dataset.tab));
+    let activeTab = await getData('mobile_active_tab');
+    if (!activeTab || Array.isArray(activeTab) || !allowedTabs.has(activeTab)) {
+        activeTab = buttons[0].dataset.tab;
+    }
+
+    const mql = window.matchMedia('(max-width: 980px)');
+    const applyTab = (tab, persist = true) => {
+        activeTab = tab;
+        buttons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tab));
+
+        if (!mql.matches) {
+            panels.forEach((panel) => panel.classList.remove('mobile-tab-hidden'));
+            return;
+        }
+
+        panels.forEach((panel) => {
+            panel.classList.toggle('mobile-tab-hidden', panel.dataset.tabPanel !== tab);
+        });
+        if (tab === 'trends') renderScreenTimeChart();
+        if (persist) setData('mobile_active_tab', tab);
+    };
+
+    buttons.forEach((btn) => {
+        btn.addEventListener('click', () => applyTab(btn.dataset.tab, true));
+    });
+
+    if (typeof mql.addEventListener === 'function') {
+        mql.addEventListener('change', () => applyTab(activeTab, false));
+    } else if (typeof mql.addListener === 'function') {
+        mql.addListener(() => applyTab(activeTab, false));
+    }
+
+    applyTab(activeTab, false);
+}
+
+async function renderTodayHabitList() {
+    const listEl = el('today-habits-list');
+    const metaEl = el('today-habits-meta');
+    const titleEl = el('today-habits-title');
+    if (!listEl || !metaEl) return;
+
+    const selectedDate = el('date')?.value || getLocalDateString();
+    const today = getLocalDateString();
+    const isToday = selectedDate === today;
+    const parts = selectedDate.split('-');
+    const shortDate = parts.length === 3 ? `${parts[1]}/${parts[2]}` : selectedDate;
+    if (titleEl) titleEl.textContent = isToday ? "Today's Habits" : `Habits for ${shortDate}`;
+    metaEl.textContent = isToday ? 'Today' : shortDate;
+    const [{ habits, hidden }, icons, history] = await Promise.all([
+        getHabitLists(),
+        getHabitIcons(),
+        getData('habit_history')
+    ]);
+    const hiddenSet = new Set(hidden);
+    const visibleHabits = habits.filter((name) => !hiddenSet.has(name));
+    const todaySet = new Set(
+        history
+            .filter((entry) => entry.date === selectedDate && entry.performed)
+            .map((entry) => entry.habit_name)
+    );
+
+    listEl.innerHTML = '';
+    if (!visibleHabits.length) {
+        const empty = document.createElement('div');
+        empty.className = 'today-habits-empty';
+        empty.textContent = 'Create a habit to start tracking today.';
+        listEl.appendChild(empty);
+        return;
+    }
+
+    visibleHabits.forEach((name) => {
+        const isDone = todaySet.has(name);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `today-habit-btn${isDone ? ' is-done' : ''}`;
+        const emoji = icons[name] ? `<span class="habit-emoji">${icons[name]}</span>` : '';
+        btn.innerHTML = `<span class="today-habit-name">${emoji}<span>${name}</span></span><span class="today-habit-state">${isDone ? 'Done' : 'Pending'}</span>`;
+        btn.onclick = async () => {
+            let h = await getData('habit_history');
+            const idx = h.findIndex((entry) => entry.habit_name === name && entry.date === selectedDate);
+            const next = isDone ? 0 : 1;
+            if (idx > -1) h[idx].performed = next;
+            else h.push({ date: selectedDate, habit_name: name, performed: next });
+            await setData('habit_history', h);
+            await renderHabitTrackers();
+            await updateWeeklyInsights();
+            showToast(`${name} • ${next ? 'Done' : 'Pending'} (${shortDate})`);
+        };
+        listEl.appendChild(btn);
+    });
 }
 
 function setupEventListeners() {
@@ -693,7 +793,13 @@ async function renderHabitTrackers() {
     const visibleHabits = habits.filter(h => !hiddenSet.has(h));
     const nav = el('habit-navigation'), cont = el('habit-grid-container'), hiddenWrap = el('hidden-habits');
     el('splash-screen').classList.toggle('hidden', habits.length > 0);
-    if (!habits.length) return;
+    if (!habits.length) {
+        if (nav) nav.innerHTML = '';
+        if (cont) cont.innerHTML = '';
+        if (hiddenWrap) hiddenWrap.classList.add('hidden');
+        renderTodayHabitList();
+        return;
+    }
     nav.innerHTML = '';
     visibleHabits.forEach(h => {
         const btn = document.createElement('div'); btn.className = 'habit-nav-item'; btn.dataset.habit = h;
@@ -745,9 +851,11 @@ async function renderHabitTrackers() {
     if (!visibleHabits.length) {
         cont.innerHTML = '';
         activeHabitName = null;
+        renderTodayHabitList();
         return;
     }
     showHabitGrid(activeHabitName && visibleHabits.includes(activeHabitName) ? activeHabitName : (visibleHabits.includes(def) ? def : visibleHabits[0]));
+    renderTodayHabitList();
 }
 
 async function renderHabitGraph(name) {

@@ -127,6 +127,74 @@ body {
     .stat-pb { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-weight: 500; }
     
 .dashboard-grid { display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; margin-top: 0; min-width: 0; }
+.mobile-tabs { display: none; }
+.mobile-tab-hidden { display: none !important; }
+.today-view-card { display: none; }
+.mobile-tab-btn {
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text-muted);
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.mobile-tab-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #ffffff;
+}
+.today-habits-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+.today-habits-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+.today-habit-btn {
+    width: 100%;
+    border: 1px solid var(--border);
+    background: var(--subtle-bg);
+    color: var(--text-main);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+.today-habit-btn.is-done {
+    border-color: var(--primary);
+    background: var(--card-bg);
+    box-shadow: inset 0 0 0 1px var(--primary);
+}
+.today-habit-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.today-habit-state {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+.today-habit-btn.is-done .today-habit-state {
+    color: var(--primary);
+}
+.today-habits-empty {
+    font-size: 13px;
+    color: var(--text-muted);
+}
 .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem; margin-bottom: 1.25rem; min-width: 0; }
 .section-title { font-size: 1rem; font-weight: 700; margin-top: 0; margin-bottom: 0.9rem; }
     
@@ -220,6 +288,19 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
 
 @media (max-width: 980px) {
     .app-container { padding: 1rem; }
+    .today-view-card { display: block; }
+    .mobile-tabs {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 2px 0 10px;
+        margin-bottom: 0.35rem;
+        -webkit-overflow-scrolling: touch;
+    }
+    .mobile-tab-btn {
+        flex: 0 0 auto;
+        min-width: 72px;
+    }
     .dashboard-grid { grid-template-columns: 1fr; }
     .right-column { order: 1; }
     .header-actions-row { flex-direction: column; align-items: flex-start; gap: 10px; }

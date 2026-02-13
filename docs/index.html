@@ -63,9 +63,24 @@
         <div id="habit-success-rates" class="insights-grid"></div>
     </section>
 
+    <nav class="mobile-tabs" aria-label="Dashboard Sections">
+        <button type="button" class="mobile-tab-btn active" data-tab="today">Today</button>
+        <button type="button" class="mobile-tab-btn" data-tab="trends">Trends</button>
+        <button type="button" class="mobile-tab-btn" data-tab="notes">Notes</button>
+        <button type="button" class="mobile-tab-btn" data-tab="data">Data</button>
+    </nav>
+
     <div class="dashboard-grid">
         <div class="left-column">
-            <section class="card">
+            <section class="card mobile-tab-section today-view-card" data-tab-panel="today">
+                <div class="header-actions-row" style="margin-bottom: 0.5rem;">
+                    <h2 id="today-habits-title" class="section-title" style="margin:0;">Today's Habits</h2>
+                    <span id="today-habits-meta" class="today-habits-meta"></span>
+                </div>
+                <div id="today-habits-list" class="today-habits-list"></div>
+            </section>
+
+            <section class="card mobile-tab-section" data-tab-panel="trends">
                 <div class="header-actions-row" style="margin-bottom: 0.5rem;">
                     <h2 class="section-title" style="margin:0;">Habit Mastery</h2>
                     <div class="header-actions">
@@ -86,7 +101,7 @@
                 <div id="habit-grid-container" class="grid-wrapper"></div>
             </section>
 
-            <section class="card">
+            <section class="card mobile-tab-section" data-tab-panel="trends">
                 <div class="header-actions-row" style="margin-bottom: 0.5rem;">
                     <h2 class="section-title" style="margin:0;">Protein Activity</h2>
                     <div class="header-actions">
@@ -105,7 +120,7 @@
                 <div id="graph" class="grid-display"></div>
             </section>
 
-            <section class="card protein-card">
+            <section class="card protein-card mobile-tab-section" data-tab-panel="today">
                 <h2 class="section-title">Protein Intake</h2>
                 <div class="protein-status-block">
                     <div class="protein-header">
@@ -145,7 +160,7 @@
                 </div>
             </section>
 
-            <section class="card">
+            <section class="card mobile-tab-section" data-tab-panel="trends">
                 <div class="header-actions-row" style="margin-bottom: 0.5rem;">
                     <h2 class="section-title" style="margin:0;">Screen Time Trend</h2>
                     <div class="header-actions">
@@ -162,7 +177,7 @@
                 </div>
             </section>
 
-            <section class="card">
+            <section class="card mobile-tab-section" data-tab-panel="today">
                 <h2 class="section-title">Log Screen Time</h2>
                 <div style="display: flex; gap: 8px;">
                     <input type="number" id="screen-hours" placeholder="Hrs" min="0">
@@ -171,7 +186,7 @@
                 <button type="button" id="save-screen-time" class="btn-success" style="margin-top: 10px;">Save Screen Time</button>
             </section>
 
-            <section class="card">
+            <section class="card mobile-tab-section" data-tab-panel="notes">
                 <div class="header-actions-row">
                     <button id="toggle-snippet-collapse" class="summary-title-btn section-title" type="button" aria-label="Toggle weekly snippets">
                         Weekly Snippets (Markdown) <span class="summary-caret">▾</span>
@@ -192,7 +207,7 @@
         </div>
 
         <aside class="right-column">
-            <section class="card settings-card">
+            <section class="card settings-card mobile-tab-section" data-tab-panel="data">
                 <div class="header-actions-row" style="margin-bottom: 0.5rem;">
                     <button id="data-management-toggle" class="summary-title-btn" type="button">
                         <span>Data Management</span>
