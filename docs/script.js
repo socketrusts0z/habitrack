@@ -105,7 +105,6 @@ async function refreshDashboard() {
     await loadDailySelections(el('date').value);
     await renderGraph();
     await renderHabitTrackers();
-    await renderTodayHabitList();
     await updateWeeklyInsights();
     await renderScreenTimeChart();
     await loadSnippet();
@@ -150,63 +149,6 @@ async function setupMobileTabs() {
     }
 
     applyTab(activeTab, false);
-}
-
-async function renderTodayHabitList() {
-    const listEl = el('today-habits-list');
-    const metaEl = el('today-habits-meta');
-    const titleEl = el('today-habits-title');
-    if (!listEl || !metaEl) return;
-
-    const selectedDate = el('date')?.value || getLocalDateString();
-    const today = getLocalDateString();
-    const isToday = selectedDate === today;
-    const parts = selectedDate.split('-');
-    const shortDate = parts.length === 3 ? `${parts[1]}/${parts[2]}` : selectedDate;
-    if (titleEl) titleEl.textContent = isToday ? "Today's Habits" : `Habits for ${shortDate}`;
-    metaEl.textContent = isToday ? 'Today' : shortDate;
-    const [{ habits, hidden }, icons, history] = await Promise.all([
-        getHabitLists(),
-        getHabitIcons(),
-        getData('habit_history')
-    ]);
-    const hiddenSet = new Set(hidden);
-    const visibleHabits = habits.filter((name) => !hiddenSet.has(name));
-    const todaySet = new Set(
-        history
-            .filter((entry) => entry.date === selectedDate && entry.performed)
-            .map((entry) => entry.habit_name)
-    );
-
-    listEl.innerHTML = '';
-    if (!visibleHabits.length) {
-        const empty = document.createElement('div');
-        empty.className = 'today-habits-empty';
-        empty.textContent = 'Create a habit to start tracking today.';
-        listEl.appendChild(empty);
-        return;
-    }
-
-    visibleHabits.forEach((name) => {
-        const isDone = todaySet.has(name);
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `today-habit-btn${isDone ? ' is-done' : ''}`;
-        const emoji = icons[name] ? `<span class="habit-emoji">${icons[name]}</span>` : '';
-        btn.innerHTML = `<span class="today-habit-name">${emoji}<span>${name}</span></span><span class="today-habit-state">${isDone ? 'Done' : 'Pending'}</span>`;
-        btn.onclick = async () => {
-            let h = await getData('habit_history');
-            const idx = h.findIndex((entry) => entry.habit_name === name && entry.date === selectedDate);
-            const next = isDone ? 0 : 1;
-            if (idx > -1) h[idx].performed = next;
-            else h.push({ date: selectedDate, habit_name: name, performed: next });
-            await setData('habit_history', h);
-            await renderHabitTrackers();
-            await updateWeeklyInsights();
-            showToast(`${name} • ${next ? 'Done' : 'Pending'} (${shortDate})`);
-        };
-        listEl.appendChild(btn);
-    });
 }
 
 function setupEventListeners() {
@@ -438,6 +380,20 @@ function updateDailyDateDisplay() {
     const value = input.value || getLocalDateString();
     const parts = value.split('-');
     label.textContent = parts.length === 3 ? `${parts[1]}/${parts[2]}` : value;
+    updateTodayTabLabel(value);
+}
+
+function updateTodayTabLabel(selectedDate) {
+    const todayTab = document.querySelector('.mobile-tab-btn[data-tab="today"]');
+    if (!todayTab) return;
+    const date = selectedDate || el('date')?.value || getLocalDateString();
+    const today = getLocalDateString();
+    if (date === today) {
+        todayTab.textContent = 'Today';
+        return;
+    }
+    const parts = date.split('-');
+    todayTab.textContent = parts.length === 3 ? `${parts[1]}/${parts[2]}` : 'Today';
 }
 
 
@@ -707,6 +663,9 @@ async function updateWeeklyInsights() {
     const range = (await getData('performance_range')) || 'weekly';
     const cont = el('habit-success-rates');
     const { label, days, dates } = getPerformanceRange(range);
+    const selectedDate = el('date')?.value || getLocalDateString();
+    const shortDate = selectedDate.split('-').length === 3 ? `${selectedDate.split('-')[1]}/${selectedDate.split('-')[2]}` : selectedDate;
+    const isToday = selectedDate === getLocalDateString();
     el('performance-title').textContent = label;
     const [pD, hD, sD, lists, icons] = await Promise.all([
         getData('protein_intake'),
@@ -723,9 +682,18 @@ async function updateWeeklyInsights() {
     updateStatCard(cont, "Avg Screen", `${avgS.toFixed(1)}h`);
     for (const h of hL) {
         const done = hD.filter(d => d.habit_name === h && dates.includes(d.date) && d.performed).length;
+        const doneForSelectedDate = !!hD.find(d => d.habit_name === h && d.date === selectedDate && d.performed);
         const streak = await getStreakData(h, 'streak'), pb = await getStreakData(h, 'pb');
         const emoji = icons[h] ? `${icons[h]} ` : '';
-        updateStatCard(cont, h, `${Math.round((done / days) * 100)}%`, streak, pb, `${emoji}${h}`);
+        updateStatCard(
+            cont,
+            h,
+            `${Math.round((done / days) * 100)}%`,
+            streak,
+            pb,
+            `${emoji}${h}`,
+            { habitName: h, isDone: doneForSelectedDate, selectedDate, shortDate, isToday }
+        );
     }
 }
 
@@ -763,12 +731,48 @@ async function getStreakData(name, type) {
     return (data.includes(today) || data.includes(yest)) ? curr : 0;
 }
 
-function updateStatCard(cont, title, val, streak = 0, pb = 0, displayTitle = null) {
+async function toggleHabitForDate(habitName, date, nextDone, shortDate) {
+    const h = await getData('habit_history');
+    const idx = h.findIndex((entry) => entry.habit_name === habitName && entry.date === date);
+    if (idx > -1) h[idx].performed = nextDone ? 1 : 0;
+    else h.push({ date, habit_name: habitName, performed: nextDone ? 1 : 0 });
+    await setData('habit_history', h);
+    await renderHabitTrackers();
+    await updateWeeklyInsights();
+    showToast(`${habitName} • ${nextDone ? 'Done' : 'Pending'} (${shortDate})`);
+}
+
+function updateStatCard(cont, title, val, streak = 0, pb = 0, displayTitle = null, toggleMeta = null) {
     const id = `stat-${title.replace(/\s+/g, '-').toLowerCase()}`;
     let c = el(id);
     if (!c) { c = document.createElement('div'); c.className = 'stat-card'; c.id = id; cont.appendChild(c); }
     const label = displayTitle || title;
-    c.innerHTML = `<span class="stat-label">${label}</span><div class="stat-main"><span class="stat-value">${val}</span>${streak ? `<span class="stat-streak">🔥${streak}</span>` : ''}</div>${pb ? `<div class="stat-pb">Best: ${pb}</div>` : ''}`;
+    c.innerHTML = `<div class="stat-label-row"><span class="stat-label">${label}</span>${toggleMeta ? `<span class="stat-status-dot ${toggleMeta.isDone ? 'done' : ''}" aria-hidden="true">✓</span>` : ''}</div><div class="stat-main"><span class="stat-value">${val}</span>${streak ? `<span class="stat-streak">🔥${streak}</span>` : ''}</div>${pb ? `<div class="stat-pb">Best: ${pb}</div>` : ''}`;
+    if (!toggleMeta) {
+        c.classList.remove('habit-toggle-card');
+        c.classList.remove('habit-toggle-done');
+        c.removeAttribute('role');
+        c.removeAttribute('tabindex');
+        c.removeAttribute('aria-label');
+        c.removeAttribute('aria-pressed');
+        c.onclick = null;
+        c.onkeydown = null;
+        return;
+    }
+    c.classList.add('habit-toggle-card');
+    c.classList.toggle('habit-toggle-done', !!toggleMeta.isDone);
+    c.setAttribute('role', 'button');
+    c.setAttribute('tabindex', '0');
+    c.setAttribute('aria-pressed', toggleMeta.isDone ? 'true' : 'false');
+    c.setAttribute('aria-label', `${label}. ${toggleMeta.isDone ? 'Done' : 'Pending'} for ${toggleMeta.isToday ? 'today' : toggleMeta.shortDate}.`);
+    const onToggle = () => toggleHabitForDate(toggleMeta.habitName, toggleMeta.selectedDate, !toggleMeta.isDone, toggleMeta.shortDate);
+    c.onclick = onToggle;
+    c.onkeydown = (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onToggle();
+        }
+    };
 }
 
 async function renderGraph() {
@@ -803,7 +807,6 @@ async function renderHabitTrackers() {
         if (nav) nav.innerHTML = '';
         if (cont) cont.innerHTML = '';
         if (hiddenWrap) hiddenWrap.classList.add('hidden');
-        renderTodayHabitList();
         return;
     }
     nav.innerHTML = '';
@@ -857,11 +860,9 @@ async function renderHabitTrackers() {
     if (!visibleHabits.length) {
         cont.innerHTML = '';
         activeHabitName = null;
-        renderTodayHabitList();
         return;
     }
     showHabitGrid(activeHabitName && visibleHabits.includes(activeHabitName) ? activeHabitName : (visibleHabits.includes(def) ? def : visibleHabits[0]));
-    renderTodayHabitList();
 }
 
 async function renderHabitGraph(name) {
