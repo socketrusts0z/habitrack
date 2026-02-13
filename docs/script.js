@@ -674,6 +674,7 @@ async function renderScreenTimeChart() {
 async function updateWeeklyInsights() {
     const range = (await getData('performance_range')) || 'weekly';
     const cont = el('habit-success-rates');
+    if (!cont) return;
     const { label, days, dates } = getPerformanceRange(range);
     const selectedDate = el('date')?.value || getLocalDateString();
     const shortDate = selectedDate.split('-').length === 3 ? `${selectedDate.split('-')[1]}/${selectedDate.split('-')[2]}` : selectedDate;
@@ -688,6 +689,8 @@ async function updateWeeklyInsights() {
     ]);
     const hiddenSet = new Set(lists.hidden);
     const hL = lists.habits.filter(h => !hiddenSet.has(h));
+    const cardId = (name) => `stat-${name.replace(/\s+/g, '-').toLowerCase()}`;
+    const keepIds = new Set([cardId('Avg Protein'), cardId('Avg Screen'), ...hL.map(cardId)]);
     const avgP = pD.filter(d => dates.includes(d.date)).reduce((a, b) => a + b.protein_grams, 0) / days;
     const avgS = sD.filter(d => dates.includes(d.date)).reduce((a, b) => a + b.total_minutes, 0) / (days * 60);
     updateStatCard(cont, "Avg Protein", `${Math.round(avgP)}g`);
@@ -707,6 +710,9 @@ async function updateWeeklyInsights() {
             { habitName: h, isDone: doneForSelectedDate, selectedDate, shortDate, isToday }
         );
     }
+    cont.querySelectorAll('.stat-card').forEach((card) => {
+        if (!keepIds.has(card.id)) card.remove();
+    });
 }
 
 function getPerformanceRange(range) {
