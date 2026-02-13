@@ -1019,8 +1019,8 @@ function renderSelectedFoods() {
     Object.keys(selectedFoods).forEach(id => {
         const f = selectedFoods[id]; total += f.servings * f.protein_per_serving;
         const li = document.createElement('li');
-        li.innerHTML = `<span>${f.name} (x${f.servings})</span><span style="color:red;cursor:pointer;font-weight:bold;font-size:18px">×</span>`;
-        li.querySelector('span:last-child').onclick = () => { f.servings > 1 ? f.servings-- : delete selectedFoods[id]; renderSelectedFoods(); };
+        li.innerHTML = `<span class="selected-food-label">${f.name} (x${f.servings})</span><button type="button" class="selected-food-remove" aria-label="Remove ${f.name}">×</button>`;
+        li.querySelector('.selected-food-remove').onclick = () => { f.servings > 1 ? f.servings-- : delete selectedFoods[id]; renderSelectedFoods(); };
         list.appendChild(li);
     });
     el('protein-total-amount').textContent = `${total}g`;
