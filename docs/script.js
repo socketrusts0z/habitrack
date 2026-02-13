@@ -305,9 +305,31 @@ function setupEventListeners() {
         const menu = el('custom-context-menu');
         const picker = el('emoji-picker');
         const r = lastMenuAnchorRect || menu.getBoundingClientRect();
-        picker.style.cssText = `top:${r.bottom + window.scrollY + 6}px;left:${r.left + window.scrollX}px;`;
-        renderEmojiPicker(habitToDelete);
+        await renderEmojiPicker(habitToDelete);
         picker.classList.remove('hidden');
+        picker.style.visibility = 'hidden';
+
+        const margin = 8;
+        const pickerRect = picker.getBoundingClientRect();
+        const viewportLeft = window.scrollX + margin;
+        const viewportRight = window.scrollX + window.innerWidth - margin;
+        const viewportTop = window.scrollY + margin;
+        const viewportBottom = window.scrollY + window.innerHeight - margin;
+
+        let left = r.left + window.scrollX;
+        let top = r.bottom + window.scrollY + 6;
+
+        if (left + pickerRect.width > viewportRight) left = viewportRight - pickerRect.width;
+        if (left < viewportLeft) left = viewportLeft;
+
+        if (top + pickerRect.height > viewportBottom) {
+            top = r.top + window.scrollY - pickerRect.height - 6;
+        }
+        if (top < viewportTop) top = viewportTop;
+
+        picker.style.left = `${left}px`;
+        picker.style.top = `${top}px`;
+        picker.style.visibility = '';
         el('custom-context-menu').classList.add('hidden');
     };
 
@@ -732,12 +754,25 @@ async function toggleHabitForDate(habitName, date, nextDone, shortDate) {
     showToast(`${habitName} • ${nextDone ? 'Done' : 'Pending'} (${shortDate})`);
 }
 
+function openHabitContextMenu(habitName, anchorEl) {
+    habitToDelete = habitName;
+    const menu = el('custom-context-menu');
+    if (!menu || !anchorEl) return;
+    menu.classList.remove('hidden');
+    const r = anchorEl.getBoundingClientRect();
+    lastMenuAnchorRect = r;
+    const m = menu.getBoundingClientRect();
+    const left = Math.max(8, r.right + window.scrollX - m.width);
+    const top = r.bottom + window.scrollY + 6;
+    menu.style.cssText = `top:${top}px;left:${left}px;`;
+}
+
 function updateStatCard(cont, title, val, streak = 0, pb = 0, displayTitle = null, toggleMeta = null) {
     const id = `stat-${title.replace(/\s+/g, '-').toLowerCase()}`;
     let c = el(id);
     if (!c) { c = document.createElement('div'); c.className = 'stat-card'; c.id = id; cont.appendChild(c); }
     const label = displayTitle || title;
-    c.innerHTML = `<div class="stat-label-row"><span class="stat-label">${label}</span>${toggleMeta ? `<span class="stat-status-dot ${toggleMeta.isDone ? 'done' : ''}" aria-hidden="true">✓</span>` : ''}</div><div class="stat-main"><span class="stat-value">${val}</span>${streak ? `<span class="stat-streak">🔥${streak}</span>` : ''}</div>${pb ? `<div class="stat-pb">Best: ${pb}</div>` : ''}`;
+    c.innerHTML = `<div class="stat-label-row"><span class="stat-label">${label}</span>${toggleMeta ? `<div class="stat-label-actions"><button type="button" class="stat-menu-btn" aria-label="Habit menu">⋮</button><span class="stat-status-dot ${toggleMeta.isDone ? 'done' : ''}" aria-hidden="true">✓</span></div>` : ''}</div><div class="stat-main"><span class="stat-value">${val}</span>${streak ? `<span class="stat-streak">🔥${streak}</span>` : ''}</div>${pb ? `<div class="stat-pb">Best: ${pb}</div>` : ''}`;
     if (!toggleMeta) {
         c.classList.remove('habit-toggle-card');
         c.classList.remove('habit-toggle-done');
@@ -757,6 +792,14 @@ function updateStatCard(cont, title, val, streak = 0, pb = 0, displayTitle = nul
     c.setAttribute('aria-label', `${label}. ${toggleMeta.isDone ? 'Done' : 'Pending'} for ${toggleMeta.isToday ? 'today' : toggleMeta.shortDate}.`);
     const onToggle = () => toggleHabitForDate(toggleMeta.habitName, toggleMeta.selectedDate, !toggleMeta.isDone, toggleMeta.shortDate);
     c.onclick = onToggle;
+    const menuBtn = c.querySelector('.stat-menu-btn');
+    if (menuBtn) {
+        menuBtn.onclick = (e) => {
+            e.stopPropagation();
+            openHabitContextMenu(toggleMeta.habitName, menuBtn);
+        };
+        menuBtn.onkeydown = (e) => e.stopPropagation();
+    }
     c.onkeydown = (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
@@ -803,20 +846,8 @@ async function renderHabitTrackers() {
     visibleHabits.forEach(h => {
         const btn = document.createElement('div'); btn.className = 'habit-nav-item'; btn.dataset.habit = h;
         const emoji = icons[h] ? `<span class="habit-emoji">${icons[h]}</span>` : '';
-        btn.innerHTML = `<span class="habit-label">${emoji}<span class="habit-name">${h}</span></span><button class="habit-menu-btn" type="button" aria-label="Habit menu">⋮</button>`;
-        btn.querySelector('.habit-label').onclick = () => showHabitGrid(h);
-        const menuBtn = btn.querySelector('.habit-menu-btn');
-        menuBtn.onclick = (e) => {
-            e.stopPropagation(); habitToDelete = h;
-            const menu = el('custom-context-menu');
-            menu.classList.remove('hidden');
-            const r = menuBtn.getBoundingClientRect();
-            lastMenuAnchorRect = r;
-            const m = menu.getBoundingClientRect();
-            const left = Math.max(8, r.right + window.scrollX - m.width);
-            const top = r.bottom + window.scrollY + 6;
-            menu.style.cssText = `top:${top}px;left:${left}px;`;
-        };
+        btn.innerHTML = `<span class="habit-label">${emoji}<span class="habit-name">${h}</span></span>`;
+        btn.onclick = () => showHabitGrid(h);
         nav.appendChild(btn);
         if (!el(`habit-${h}`)) {
             const g = document.createElement('div'); g.id = `habit-${h}`; g.className = 'habit-grid-instance hidden';
