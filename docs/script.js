@@ -249,8 +249,12 @@ function setupEventListeners() {
         let count = 0;
         document.querySelectorAll('.food-box').forEach(b => {
             const m = b.getAttribute('data-name').toLowerCase().includes(term);
-            b.style.display = m ? 'block' : 'none';
+            b.style.display = m ? 'flex' : 'none';
             if (m) count++;
+        });
+        document.querySelectorAll('.food-section').forEach((section) => {
+            const visibleInSection = section.querySelector('.food-box[style*="display: flex"], .food-box:not([style*="display: none"])');
+            section.style.display = visibleInSection ? 'flex' : 'none';
         });
         el('add-food-form').classList.toggle('hidden', count > 0 || term === "");
     };
@@ -262,6 +266,7 @@ function setupEventListeners() {
             foods.push({ id: Date.now(), name, protein_per_serving: prot });
             await setData('food_list', foods);
             el('food-search').value = ''; el('new-food-protein').value = '';
+            el('add-food-form').classList.add('hidden');
             renderFoods(); showToast('Added');
         }
     };
@@ -941,18 +946,71 @@ function getDisplayRange(range) {
 }
 
 async function renderFoods() {
-    const foods = await getData('food_list'), gal = el('food-gallery');
+    const [foods, usageRaw] = await Promise.all([getData('food_list'), getData('food_usage_counts')]);
+    const gal = el('food-gallery');
+    if (!gal) return;
+    const usage = usageRaw && !Array.isArray(usageRaw) ? usageRaw : {};
     gal.innerHTML = '';
-    foods.forEach(f => {
-        const b = document.createElement('div'); b.className = 'food-box'; b.setAttribute('data-name', f.name);
-        b.innerHTML = `<span class="delete-food-btn">&times;</span><div>${f.name}</div><div style="color:var(--primary)">${f.protein_per_serving}g</div>`;
-        b.onclick = async (e) => {
-            if (e.target.className === 'delete-food-btn') {
-                if (confirm("Delete?")) { const fl = (await getData('food_list')).filter(x => x.id !== f.id); await setData('food_list', fl); renderFoods(); }
-            } else { selectedFoods[f.id] = { ...f, servings: (selectedFoods[f.id]?.servings || 0) + 1 }; renderSelectedFoods(); }
+
+    const quickMinWidth = window.matchMedia('(max-width: 600px)').matches ? 72 : 80;
+    const quickGap = 8;
+    const quickContainerWidth = gal.clientWidth || gal.parentElement?.clientWidth || 320;
+    const quickSlots = Math.max(1, Math.floor((quickContainerWidth + quickGap) / (quickMinWidth + quickGap)));
+
+    const quickFoods = foods
+        .filter((f) => (usage[f.id] || 0) > 0)
+        .sort((a, b) => (usage[b.id] || 0) - (usage[a.id] || 0))
+        .slice(0, quickSlots);
+
+    const onAddFood = async (food) => {
+        selectedFoods[food.id] = { ...food, servings: (selectedFoods[food.id]?.servings || 0) + 1 };
+        const wasUsed = (usage[food.id] || 0) > 0;
+        usage[food.id] = (usage[food.id] || 0) + 1;
+        await setData('food_usage_counts', usage);
+        renderSelectedFoods();
+        if (!wasUsed) renderFoods();
+    };
+
+    const createFoodBox = (food, allowDelete = true) => {
+        const box = document.createElement('div');
+        box.className = 'food-box';
+        box.setAttribute('data-name', food.name);
+        box.innerHTML = `${allowDelete ? '<span class="delete-food-btn">&times;</span>' : ''}<div class="food-name" title="${food.name}">${food.name}</div><div class="food-protein-badge">${food.protein_per_serving}g</div>`;
+        box.onclick = async (e) => {
+            if (allowDelete && e.target.className === 'delete-food-btn') {
+                if (confirm("Delete?")) {
+                    const fl = (await getData('food_list')).filter(x => x.id !== food.id);
+                    await setData('food_list', fl);
+                    delete usage[food.id];
+                    await setData('food_usage_counts', usage);
+                    renderFoods();
+                }
+                return;
+            }
+            await onAddFood(food);
         };
-        gal.appendChild(b);
-    });
+        return box;
+    };
+
+    if (quickFoods.length) {
+        const quickSection = document.createElement('section');
+        quickSection.className = 'food-section';
+        quickSection.innerHTML = '<div class="food-section-title">Quick Add</div>';
+        const quickGrid = document.createElement('div');
+        quickGrid.className = 'food-grid-inner food-grid-quick';
+        quickFoods.forEach((food) => quickGrid.appendChild(createFoodBox(food, false)));
+        quickSection.appendChild(quickGrid);
+        gal.appendChild(quickSection);
+    }
+
+    const allSection = document.createElement('section');
+    allSection.className = 'food-section';
+    allSection.innerHTML = '<div class="food-section-title">All Foods</div>';
+    const allGrid = document.createElement('div');
+    allGrid.className = 'food-grid-inner';
+    foods.forEach((food) => allGrid.appendChild(createFoodBox(food, true)));
+    allSection.appendChild(allGrid);
+    gal.appendChild(allSection);
 }
 
 function renderSelectedFoods() {
