@@ -1052,21 +1052,14 @@ function renderSelectedFoods() {
         f.servings = servings;
         total += servings * (Number(f.protein_per_serving) || 0);
         const li = document.createElement('li');
-        li.innerHTML = `<span class="selected-food-label">${f.name}</span><div class="selected-food-controls"><input type="number" class="selected-food-serving-input" min="0.25" step="0.25" value="${formatNumber(servings)}" aria-label="Servings for ${f.name}"><span class="selected-food-serving-suffix">serv</span><button type="button" class="selected-food-remove" aria-label="Remove ${f.name}">×</button></div>`;
-        const servingInput = li.querySelector('.selected-food-serving-input');
-        const commitServings = () => {
-            const next = sanitizeServings(servingInput.value);
-            if (!next) delete selectedFoods[id];
-            else selectedFoods[id].servings = next;
-            renderSelectedFoods();
-        };
-        servingInput.addEventListener('change', commitServings);
-        servingInput.addEventListener('blur', commitServings);
-        servingInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                commitServings();
-            }
+        li.innerHTML = `<span class="selected-food-label">${f.name}</span><div class="selected-food-controls"><button type="button" class="selected-food-step" data-step="-0.5" aria-label="Decrease servings for ${f.name}">-</button><span class="selected-food-serving-value" aria-label="Servings for ${f.name}">${formatNumber(servings)}</span><button type="button" class="selected-food-step" data-step="0.5" aria-label="Increase servings for ${f.name}">+</button><button type="button" class="selected-food-remove" aria-label="Remove ${f.name}">×</button></div>`;
+        li.querySelectorAll('.selected-food-step').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const delta = Number(btn.dataset.step) || 0;
+                const next = roundTo2(Math.max(0.5, servings + delta));
+                selectedFoods[id].servings = next;
+                renderSelectedFoods();
+            });
         });
         li.querySelector('.selected-food-remove').onclick = () => { delete selectedFoods[id]; renderSelectedFoods(); };
         list.appendChild(li);
