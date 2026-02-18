@@ -47,6 +47,32 @@ const getHabitIcons = async () => {
     const icons = await getData('habit_icons');
     return icons && !Array.isArray(icons) ? icons : {};
 };
+const roundTo2 = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+const formatNumber = (value) => {
+    const rounded = roundTo2(value);
+    return Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(2).replace(/\.?0+$/, '');
+};
+const sanitizeServings = (value) => Math.max(0, roundTo2(Number(value) || 0));
+const getSelectedFoodTotal = () => roundTo2(Object.values(selectedFoods).reduce((sum, food) => sum + ((Number(food.protein_per_serving) || 0) * sanitizeServings(food.servings)), 0));
+const normalizeLegacyFoods = (foodsRaw) => {
+    if (!foodsRaw || typeof foodsRaw !== 'object') return { foods: {}, changed: false };
+    let changed = false;
+    const foods = {};
+    Object.entries(foodsRaw).forEach(([id, food]) => {
+        if (!food || typeof food !== 'object') {
+            changed = true;
+            return;
+        }
+        const hasServings = Object.prototype.hasOwnProperty.call(food, 'servings');
+        let servings = hasServings ? Number(food.servings) : 1;
+        if (!Number.isFinite(servings)) servings = 1;
+        servings = roundTo2(servings);
+        if (servings < 0) servings = 0;
+        if (!hasServings || Number(food.servings) !== servings) changed = true;
+        foods[id] = { ...food, servings };
+    });
+    return { foods, changed };
+};
 
 document.addEventListener("DOMContentLoaded", async () => {
     // Prevent keyboard zoom jumps on iOS
@@ -202,7 +228,7 @@ function setupEventListeners() {
     el('screen-week-picker').onchange = renderScreenTimeChart;
 
     el('submit').onclick = async () => {
-        const date = el('date').value, total = Object.values(selectedFoods).reduce((s, f) => s + (f.protein_per_serving * f.servings), 0);
+        const date = el('date').value, total = getSelectedFoodTotal();
         const list = (await getData('protein_intake')).filter(i => i.date !== date);
         list.push({ date, protein_grams: total, foods: { ...selectedFoods } });
         await setData('protein_intake', list);
@@ -1017,13 +1043,36 @@ function renderSelectedFoods() {
     const list = el('selected-foods-list'); list.innerHTML = '';
     let total = 0;
     Object.keys(selectedFoods).forEach(id => {
-        const f = selectedFoods[id]; total += f.servings * f.protein_per_serving;
+        const f = selectedFoods[id];
+        const servings = sanitizeServings(f.servings);
+        if (!servings) {
+            delete selectedFoods[id];
+            return;
+        }
+        f.servings = servings;
+        total += servings * (Number(f.protein_per_serving) || 0);
         const li = document.createElement('li');
-        li.innerHTML = `<span class="selected-food-label">${f.name} (x${f.servings})</span><button type="button" class="selected-food-remove" aria-label="Remove ${f.name}">×</button>`;
-        li.querySelector('.selected-food-remove').onclick = () => { f.servings > 1 ? f.servings-- : delete selectedFoods[id]; renderSelectedFoods(); };
+        li.innerHTML = `<span class="selected-food-label">${f.name}</span><div class="selected-food-controls"><input type="number" class="selected-food-serving-input" min="0.25" step="0.25" value="${formatNumber(servings)}" aria-label="Servings for ${f.name}"><span class="selected-food-serving-suffix">serv</span><button type="button" class="selected-food-remove" aria-label="Remove ${f.name}">×</button></div>`;
+        const servingInput = li.querySelector('.selected-food-serving-input');
+        const commitServings = () => {
+            const next = sanitizeServings(servingInput.value);
+            if (!next) delete selectedFoods[id];
+            else selectedFoods[id].servings = next;
+            renderSelectedFoods();
+        };
+        servingInput.addEventListener('change', commitServings);
+        servingInput.addEventListener('blur', commitServings);
+        servingInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                commitServings();
+            }
+        });
+        li.querySelector('.selected-food-remove').onclick = () => { delete selectedFoods[id]; renderSelectedFoods(); };
         list.appendChild(li);
     });
-    el('protein-total-amount').textContent = `${total}g`;
+    total = roundTo2(total);
+    el('protein-total-amount').textContent = `${formatNumber(total)}g`;
     const goal = 150;
     const pct = Math.min((total / goal) * 100, 100);
     const ring = el('protein-ring-progress');
@@ -1038,8 +1087,20 @@ function renderSelectedFoods() {
 }
 
 async function loadDailySelections(date) {
-    const entry = (await getData('protein_intake')).find(x => x.date === date);
-    selectedFoods = entry ? entry.foods : {}; renderSelectedFoods();
+    const proteinIntake = await getData('protein_intake');
+    const entry = proteinIntake.find(x => x.date === date);
+    if (entry) {
+        const { foods, changed } = normalizeLegacyFoods(entry.foods);
+        selectedFoods = foods;
+        if (changed) {
+            const updated = proteinIntake.filter(x => x.date !== date);
+            updated.push({ ...entry, foods });
+            await setData('protein_intake', updated);
+        }
+    } else {
+        selectedFoods = {};
+    }
+    renderSelectedFoods();
     const s = (await getData('screentime_history')).find(x => x.date === date);
     el('screen-hours').value = s ? Math.floor(s.total_minutes / 60) : '';
     el('screen-minutes').value = s ? s.total_minutes % 60 : '';

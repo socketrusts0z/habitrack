@@ -254,6 +254,9 @@ body {
     #selected-foods-list { list-style: none; padding: 0; margin: 0 0 1rem 0; }
     #selected-foods-list li { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 6px 10px; padding: 6px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
     .selected-food-label { min-width: 0; flex: 1 1 180px; overflow-wrap: anywhere; }
+    .selected-food-controls { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+    .selected-food-serving-input { width: 68px; min-width: 68px; padding: 4px 6px; font-size: 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--subtle-bg); color: var(--text-main); text-align: right; }
+    .selected-food-serving-suffix { font-size: 12px; color: var(--text-muted); }
     .selected-food-remove { color: var(--danger); cursor: pointer; font-weight: 700; font-size: 18px; line-height: 1; border: 0; background: transparent; padding: 0 2px; margin-left: auto; flex: 0 0 auto; }
     
 input[type="text"], input[type="date"], input[type="number"], textarea {
