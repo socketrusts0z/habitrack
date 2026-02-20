@@ -155,18 +155,43 @@
 
             <section class="card mobile-tab-section" data-tab-panel="trends">
                 <div class="header-actions-row" style="margin-bottom: 0.5rem;">
-                    <h2 class="section-title" style="margin:0;">Screen Time Trend</h2>
-                    <div class="header-actions">
-                        <input type="week" id="screen-week-picker" class="search-bar" style="width: auto; padding: 2px 8px; height: 24px;">
-                        <select id="screen-time-range" class="search-bar" style="width: auto; padding: 2px 8px; height: 24px;">
-                            <option value="7" selected>7 Days</option>
-                            <option value="14">14 Days</option>
-                            <option value="30">30 Days</option>
-                        </select>
+                    <h2 class="section-title" style="margin:0;">Trend Graph</h2>
+                    <div class="header-actions trend-chart-tabs">
+                        <button type="button" class="btn-primary trend-chart-tab active" data-trend-chart="protein">Protein</button>
+                        <button type="button" class="btn-primary trend-chart-tab" data-trend-chart="screen">Screen Time</button>
                     </div>
                 </div>
-                <div id="screen-time-container" style="height: 180px; width: 100%; padding-top: 10px;">
-                    <svg id="screen-time-svg" style="width:100%; height:100%; overflow: visible;"></svg>
+                <div id="trend-chart-panel-protein" class="trend-chart-panel">
+                    <div class="header-actions-row" style="margin-bottom: 0.5rem;">
+                        <h3 class="section-title" style="margin:0;">Protein Intake Trend</h3>
+                        <div class="header-actions">
+                            <input type="week" id="protein-trend-week-picker" class="search-bar" style="width: auto; padding: 2px 8px; height: 24px;">
+                            <select id="protein-trend-range" class="search-bar" style="width: auto; padding: 2px 8px; height: 24px;">
+                                <option value="7" selected>7 Days</option>
+                                <option value="14">14 Days</option>
+                                <option value="30">30 Days</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="protein-trend-container" style="height: 180px; width: 100%; padding-top: 10px;">
+                        <svg id="protein-trend-svg" style="width:100%; height:100%; overflow: visible;"></svg>
+                    </div>
+                </div>
+                <div id="trend-chart-panel-screen" class="trend-chart-panel hidden">
+                    <div class="header-actions-row" style="margin-bottom: 0.5rem;">
+                        <h3 class="section-title" style="margin:0;">Screen Time Trend</h3>
+                        <div class="header-actions">
+                            <input type="week" id="screen-week-picker" class="search-bar" style="width: auto; padding: 2px 8px; height: 24px;">
+                            <select id="screen-time-range" class="search-bar" style="width: auto; padding: 2px 8px; height: 24px;">
+                                <option value="7" selected>7 Days</option>
+                                <option value="14">14 Days</option>
+                                <option value="30">30 Days</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="screen-time-container" style="height: 180px; width: 100%; padding-top: 10px;">
+                        <svg id="screen-time-svg" style="width:100%; height:100%; overflow: visible;"></svg>
+                    </div>
                 </div>
             </section>
 

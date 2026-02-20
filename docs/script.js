@@ -93,6 +93,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const currentWeekStr = `${now.getFullYear()}-W${getWeekNumber(now).toString().padStart(2, '0')}`;
     el('snippet-week-picker').value = currentWeekStr;
     el('screen-week-picker').value = currentWeekStr;
+    el('protein-trend-week-picker').value = currentWeekStr;
 
     const perfRange = await getData('performance_range');
     if (!perfRange || Array.isArray(perfRange)) await setData('performance_range', 'weekly');
@@ -122,8 +123,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (el('protein-order')) el('protein-order').value = proteinOrder;
     if (el('habit-order')) el('habit-order').value = habitOrder;
     if (el('screen-time-range')) el('screen-time-range').value = screenTimeRange;
+    await setupTrendChartTabs();
     await refreshDashboard();
     setupEventListeners();
+    setupWeekPickerTapSupport();
     await setupMobileTabs();
     setupGridHaptics();
 });
@@ -135,6 +138,7 @@ async function refreshDashboard() {
     await renderHabitTrackers();
     await updateWeeklyInsights();
     await renderScreenTimeChart();
+    await renderProteinTrendChart();
     await loadSnippet();
 }
 
@@ -162,7 +166,10 @@ async function setupMobileTabs() {
         panels.forEach((panel) => {
             panel.classList.toggle('mobile-tab-hidden', panel.dataset.tabPanel !== tab);
         });
-        if (tab === 'trends') renderScreenTimeChart();
+        if (tab === 'trends') {
+            renderScreenTimeChart();
+            renderProteinTrendChart();
+        }
         if (persist) setData('mobile_active_tab', tab);
     };
 
@@ -179,12 +186,32 @@ async function setupMobileTabs() {
     applyTab(activeTab, false);
 }
 
+async function setupTrendChartTabs() {
+    const tabs = Array.from(document.querySelectorAll('.trend-chart-tab'));
+    if (!tabs.length) return;
+    let active = await getData('trend_chart_active');
+    if (active !== 'protein' && active !== 'screen') active = 'protein';
+    const apply = (name, persist = true) => {
+        tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.trendChart === name));
+        el('trend-chart-panel-protein')?.classList.toggle('hidden', name !== 'protein');
+        el('trend-chart-panel-screen')?.classList.toggle('hidden', name !== 'screen');
+        if (name === 'protein') renderProteinTrendChart();
+        if (name === 'screen') renderScreenTimeChart();
+        if (persist) setData('trend_chart_active', name);
+    };
+    tabs.forEach((tab) => {
+        tab.onclick = () => apply(tab.dataset.trendChart, true);
+    });
+    apply(active, false);
+}
+
 function setupEventListeners() {
     el('theme-toggle').onclick = async () => {
         const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
         next === 'dark' ? document.documentElement.setAttribute('data-theme', 'dark') : document.documentElement.removeAttribute('data-theme');
         await setData('theme_preference', next);
         renderScreenTimeChart();
+        renderProteinTrendChart();
     };
 
     document.addEventListener('click', (e) => {
@@ -227,11 +254,13 @@ function setupEventListeners() {
             renderScreenTimeChart();
         };
     }
+    el('protein-trend-range').onchange = renderProteinTrendChart;
     el('protein-range').onchange = async (e) => { await setData('protein_range', e.target.value); renderGraph(); };
     el('habit-range').onchange = async (e) => { await setData('habit_range', e.target.value); renderHabitTrackers(); };
     el('protein-order').onchange = async (e) => { await setData('protein_order', e.target.value); renderGraph(); };
     el('habit-order').onchange = async (e) => { await setData('habit_order', e.target.value); renderHabitTrackers(); };
     el('screen-week-picker').onchange = renderScreenTimeChart;
+    el('protein-trend-week-picker').onchange = renderProteinTrendChart;
 
     const submitBtn = el('submit');
     if (submitBtn) {
@@ -421,6 +450,27 @@ function setupEventListeners() {
     el('clear-all-btn').onclick = async () => confirm("Clear all?") && (await clearAllData(), location.reload());
 }
 
+function setupWeekPickerTapSupport() {
+    ['screen-week-picker', 'protein-trend-week-picker', 'snippet-week-picker'].forEach((id) => {
+        const input = el(id);
+        if (!input) return;
+        input.style.cursor = 'pointer';
+        const openPicker = (e) => {
+            if (typeof input.showPicker !== 'function') return;
+            try {
+                input.showPicker();
+                e.preventDefault();
+            } catch (_) {}
+        };
+        input.addEventListener('click', openPicker);
+        input.addEventListener('touchstart', openPicker, { passive: false });
+        input.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            openPicker(e);
+        });
+    });
+}
+
 function updateDailyDateDisplay() {
     const input = el('date');
     const label = el('daily-date-display');
@@ -462,6 +512,7 @@ async function autosaveProteinEntry(showToastMessage = false) {
     list.push({ date, protein_grams: total, foods: { ...selectedFoods } });
     await setData('protein_intake', list);
     await renderGraph();
+    await renderProteinTrendChart();
     await updateWeeklyInsights();
     if (showToastMessage) showToast('Saved');
 }
@@ -725,6 +776,86 @@ async function renderScreenTimeChart() {
         circ.onclick = () => { el('date').value = pt.date; refreshDashboard(); };
         const t = document.createElementNS("http://www.w3.org/2000/svg", "title");
         t.textContent = `${pt.date}: ${pt.val.toFixed(1)}h`; circ.appendChild(t);
+        svg.appendChild(circ);
+    });
+}
+
+async function renderProteinTrendChart() {
+    const svg = el('protein-trend-svg');
+    const rangeEl = el('protein-trend-range');
+    const weekEl = el('protein-trend-week-picker');
+    if (!svg || !rangeEl || !weekEl) return;
+
+    let range = parseInt(rangeEl.value, 10);
+    if (!Number.isFinite(range) || range < 2) range = 7;
+    const weekVal = weekEl.value;
+    const data = await getData('protein_intake');
+    svg.innerHTML = '';
+
+    const w = svg.parentElement.clientWidth;
+    const h = 180;
+    const pL = 40, pB = 30, pT = 20, pR = 20;
+    const cW = w - pL - pR, cH = h - pT - pB;
+    const pts = [];
+
+    let endDate = new Date();
+    if (weekVal) {
+        const [year, week] = weekVal.split('-W');
+        endDate = new Date(year, 0, 1 + (week - 1) * 7);
+        const dayOfWeek = endDate.getDay();
+        endDate.setDate(endDate.getDate() + (7 - dayOfWeek));
+    }
+
+    for (let i = range - 1; i >= 0; i--) {
+        const d = new Date(endDate);
+        d.setDate(d.getDate() - i);
+        const s = getLocalDateString(d);
+        const entry = data.find(x => x.date === s);
+        pts.push({ date: s, val: Number(entry?.protein_grams) || 0, label: `${d.getMonth() + 1}/${d.getDate()}` });
+    }
+
+    const maxV = Math.max(...pts.map(p => p.val), 150);
+    const step = maxV > 200 ? 50 : 25;
+    const getX = (i) => pL + (i * cW / (range - 1));
+    const getY = (v) => (h - pB) - (v * cH / maxV);
+
+    for (let v = 0; v <= maxV; v += step) {
+        const y = getY(v);
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        setAttrs(line, { x1: pL, y1: y, x2: w - pR, y2: y, stroke: "var(--border)", "stroke-dasharray": "2,2", opacity: 0.5 });
+        svg.appendChild(line);
+        const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        setAttrs(txt, { x: pL - 5, y: y + 3, "text-anchor": "end", "font-size": "10px", fill: "var(--text-muted)" });
+        txt.textContent = `${v}g`;
+        svg.appendChild(txt);
+    }
+
+    pts.forEach((pt, i) => {
+        if (range > 14 && i % Math.ceil(range / 7) !== 0 && i !== pts.length - 1) return;
+        const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        setAttrs(txt, { x: getX(i), y: h - 10, "text-anchor": "middle", "font-size": "10px", fill: "var(--text-muted)" });
+        txt.textContent = pt.label;
+        svg.appendChild(txt);
+    });
+
+    let pathD = `M ${getX(0)} ${getY(pts[0].val)}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+        const x1 = getX(i), y1 = getY(pts[i].val), x2 = getX(i + 1), y2 = getY(pts[i + 1].val);
+        const cx = (x1 + x2) / 2;
+        pathD += ` C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`;
+    }
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    setAttrs(path, { d: pathD, fill: "none", stroke: "#16a34a", "stroke-width": "2.5" });
+    svg.appendChild(path);
+
+    pts.forEach((pt, i) => {
+        const circ = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        setAttrs(circ, { cx: getX(i), cy: getY(pt.val), r: 4, fill: "#16a34a" });
+        circ.style.cursor = "pointer";
+        circ.onclick = () => { el('date').value = pt.date; refreshDashboard(); };
+        const t = document.createElementNS("http://www.w3.org/2000/svg", "title");
+        t.textContent = `${pt.date}: ${formatNumber(pt.val)}g`;
+        circ.appendChild(t);
         svg.appendChild(circ);
     });
 }
