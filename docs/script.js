@@ -113,16 +113,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     const habitOrder = (await getData('habit_order')) || 'asc';
     let screenTimeRange = await getData('screen_time_range');
     if (!screenTimeRange || Array.isArray(screenTimeRange)) screenTimeRange = '7';
+    let proteinTrendRange = await getData('protein_trend_range');
+    if (!proteinTrendRange || Array.isArray(proteinTrendRange)) proteinTrendRange = '7';
     await setData('protein_range', proteinRange);
     await setData('habit_range', habitRange);
     await setData('protein_order', proteinOrder);
     await setData('habit_order', habitOrder);
     await setData('screen_time_range', screenTimeRange);
+    await setData('protein_trend_range', proteinTrendRange);
     if (el('protein-range')) el('protein-range').value = proteinRange;
     if (el('habit-range')) el('habit-range').value = habitRange;
     if (el('protein-order')) el('protein-order').value = proteinOrder;
     if (el('habit-order')) el('habit-order').value = habitOrder;
     if (el('screen-time-range')) el('screen-time-range').value = screenTimeRange;
+    if (el('protein-trend-range')) el('protein-trend-range').value = proteinTrendRange;
     await setupTrendChartTabs();
     await refreshDashboard();
     setupEventListeners();
@@ -254,7 +258,10 @@ function setupEventListeners() {
             renderScreenTimeChart();
         };
     }
-    el('protein-trend-range').onchange = renderProteinTrendChart;
+    el('protein-trend-range').onchange = async (e) => {
+        await setData('protein_trend_range', e.target.value);
+        renderProteinTrendChart();
+    };
     el('protein-range').onchange = async (e) => { await setData('protein_range', e.target.value); renderGraph(); };
     el('habit-range').onchange = async (e) => { await setData('habit_range', e.target.value); renderHabitTrackers(); };
     el('protein-order').onchange = async (e) => { await setData('protein_order', e.target.value); renderGraph(); };
