@@ -208,6 +208,7 @@ body {
     .graph-day:active, .habit-day:active { transform: scale(0.85); box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25); filter: brightness(1.08); }
     .level-1 { background-color: var(--lvl-1); } .level-2 { background-color: var(--lvl-2); }
     .level-3 { background-color: var(--lvl-3); } .level-4 { background-color: var(--lvl-4); }
+    .protein-day-readout { margin-top: 8px; font-size: 12px; color: var(--text-muted); }
     
 .habit-nav { display: flex; gap: 8px; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; min-width: 0; flex-wrap: wrap; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .habit-nav-item { padding: 6px 8px; border-radius: 8px; font-size: 13px; cursor: pointer; color: var(--text-muted); max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; display: inline-flex; align-items: center; gap: 6px; touch-action: manipulation; }
@@ -253,6 +254,7 @@ body {
     .selection-box { background: transparent; border-top: 1px solid var(--border); padding-top: 1rem; }
     #selected-foods-list { list-style: none; padding: 0; margin: 0 0 1rem 0; }
     #selected-foods-list li { display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
+    #selected-foods-list li:last-child { border-bottom: 0; }
     .selected-food-label { min-width: 0; flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .selected-food-controls { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; flex: 0 0 auto; }
     .selected-food-step { width: 18px; height: 18px; padding: 0; border: 1px solid var(--border); border-radius: 999px; background: var(--subtle-bg); color: var(--text-main); font-size: 12px; line-height: 1; cursor: pointer; }

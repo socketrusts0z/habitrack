@@ -1,4 +1,4 @@
-let selectedFoods = {}, habitToDelete = null, activeHabitName = null, lastMenuAnchorRect = null;
+let selectedFoods = {}, habitToDelete = null, activeHabitName = null, lastMenuAnchorRect = null, proteinGraphSelectedDate = null;
 const EMOJI_OPTIONS = ['💧','🏃','🧘','📖','🥗','😴','🏋️','🧠','📝','🧹','🧑‍💻','🦷','🍵','🚶','🎧','🪴','🎯','🛌','🧴','🧊','🚰','🍎','🌞','🧘‍♂️','🧘‍♀️','🧠'];
 const DEFAULT_FOODS = [{ id: 101, name: 'Egg', protein_per_serving: 6 }, { id: 102, name: 'Whey Protein', protein_per_serving: 25 }];
 const el = (id) => document.getElementById(id);
@@ -51,6 +51,12 @@ const roundTo2 = (value) => Math.round((Number(value) + Number.EPSILON) * 100) /
 const formatNumber = (value) => {
     const rounded = roundTo2(value);
     return Number.isInteger(rounded) ? `${rounded}` : rounded.toFixed(2).replace(/\.?0+$/, '');
+};
+const formatDateShort = (isoDate) => {
+    if (!isoDate) return '';
+    const [y, m, d] = isoDate.split('-').map(Number);
+    if (!y || !m || !d) return isoDate;
+    return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
 const sanitizeServings = (value) => Math.max(0, roundTo2(Number(value) || 0));
 const getSelectedFoodTotal = () => roundTo2(Object.values(selectedFoods).reduce((sum, food) => sum + ((Number(food.protein_per_serving) || 0) * sanitizeServings(food.servings)), 0));
@@ -227,13 +233,12 @@ function setupEventListeners() {
     el('habit-order').onchange = async (e) => { await setData('habit_order', e.target.value); renderHabitTrackers(); };
     el('screen-week-picker').onchange = renderScreenTimeChart;
 
-    el('submit').onclick = async () => {
-        const date = el('date').value, total = getSelectedFoodTotal();
-        const list = (await getData('protein_intake')).filter(i => i.date !== date);
-        list.push({ date, protein_grams: total, foods: { ...selectedFoods } });
-        await setData('protein_intake', list);
-        showToast('Saved'); renderGraph(); updateWeeklyInsights();
-    };
+    const submitBtn = el('submit');
+    if (submitBtn) {
+        submitBtn.onclick = async () => {
+            await autosaveProteinEntry(true);
+        };
+    }
 
     el('save-screen-time').onclick = async () => {
         const mins = (parseInt(el('screen-hours').value) || 0) * 60 + (parseInt(el('screen-minutes').value) || 0);
@@ -437,6 +442,28 @@ function updateTodayTabLabel(selectedDate) {
     }
     const parts = date.split('-');
     todayTab.textContent = parts.length === 3 ? `${parts[1]}/${parts[2]}` : 'Today';
+}
+
+function renderProteinDayReadout(date, grams) {
+    const readout = el('protein-day-readout');
+    if (!readout) return;
+    if (!date) {
+        readout.textContent = 'Selected: none';
+        return;
+    }
+    readout.textContent = `Selected: ${formatDateShort(date)} • ${formatNumber(grams)}g`;
+}
+
+async function autosaveProteinEntry(showToastMessage = false) {
+    const date = el('date')?.value;
+    if (!date) return;
+    const total = getSelectedFoodTotal();
+    const list = (await getData('protein_intake')).filter((entry) => entry.date !== date);
+    list.push({ date, protein_grams: total, foods: { ...selectedFoods } });
+    await setData('protein_intake', list);
+    await renderGraph();
+    await updateWeeklyInsights();
+    if (showToastMessage) showToast('Saved');
 }
 
 
@@ -852,19 +879,43 @@ async function renderGraph() {
     const orderKey = (await getData('protein_order')) || 'asc';
     const { dates } = getDisplayRange(rangeKey);
     const displayDates = orderKey === 'desc' ? dates.slice().reverse() : dates;
+    const proteinByDate = new Map(data.map((entry) => [entry.date, Number(entry.protein_grams) || 0]));
+    const selectedDateInput = el('date')?.value || getLocalDateString();
+    const visibleDates = new Set(displayDates);
+    if (visibleDates.has(selectedDateInput)) {
+        proteinGraphSelectedDate = selectedDateInput;
+    } else if (!proteinGraphSelectedDate || !visibleDates.has(proteinGraphSelectedDate)) {
+        proteinGraphSelectedDate = visibleDates.has(selectedDateInput) ? selectedDateInput : displayDates[displayDates.length - 1];
+    }
     for (let i = 0; i < displayDates.length; i++) {
         const s = displayDates[i];
-        const v = data.find(x => x.date === s)?.protein_grams || 0;
+        const v = proteinByDate.get(s) || 0;
         const lvl = v === 0 ? 0 : v < 50 ? 1 : v < 100 ? 2 : v < 150 ? 3 : 4;
-        const day = document.createElement('div'); day.className = `graph-day level-${lvl}`; day.title = `${s}: ${v}g`;
+        const day = document.createElement('div');
+        day.className = `graph-day level-${lvl}`;
+        if (s === proteinGraphSelectedDate) day.classList.add('graph-day-selected');
+        day.title = `${s}: ${formatNumber(v)}g`;
+        day.setAttribute('role', 'button');
+        day.setAttribute('tabindex', '0');
         day.onclick = () => {
+            proteinGraphSelectedDate = s;
             const dateInput = el('date');
-            if (!dateInput) return;
+            if (!dateInput) {
+                renderGraph();
+                return;
+            }
             dateInput.value = s;
             dateInput.dispatchEvent(new Event('change', { bubbles: true }));
         };
+        day.onkeydown = (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                day.click();
+            }
+        };
         g.appendChild(day);
     }
+    renderProteinDayReadout(proteinGraphSelectedDate, proteinByDate.get(proteinGraphSelectedDate) || 0);
 }
 
 async function renderHabitTrackers() {
@@ -994,6 +1045,7 @@ async function renderFoods() {
         usage[food.id] = (usage[food.id] || 0) + 1;
         await setData('food_usage_counts', usage);
         renderSelectedFoods();
+        await autosaveProteinEntry();
         if (!wasUsed) renderFoods();
     };
 
@@ -1059,9 +1111,14 @@ function renderSelectedFoods() {
                 const next = roundTo2(Math.max(0.5, servings + delta));
                 selectedFoods[id].servings = next;
                 renderSelectedFoods();
+                autosaveProteinEntry().catch(() => {});
             });
         });
-        li.querySelector('.selected-food-remove').onclick = () => { delete selectedFoods[id]; renderSelectedFoods(); };
+        li.querySelector('.selected-food-remove').onclick = () => {
+            delete selectedFoods[id];
+            renderSelectedFoods();
+            autosaveProteinEntry().catch(() => {});
+        };
         list.appendChild(li);
     });
     total = roundTo2(total);
