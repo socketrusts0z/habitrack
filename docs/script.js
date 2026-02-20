@@ -456,14 +456,29 @@ function setupWeekPickerTapSupport() {
         if (!input) return;
         input.style.cursor = 'pointer';
         const openPicker = (e) => {
-            if (typeof input.showPicker !== 'function') return;
             try {
-                input.showPicker();
-                e.preventDefault();
+                if (typeof input.showPicker === 'function') {
+                    input.showPicker();
+                } else {
+                    // iOS Safari fallback: explicit focus + click from a user gesture.
+                    input.focus({ preventScroll: true });
+                    input.click();
+                }
+                if (e && typeof e.preventDefault === 'function') e.preventDefault();
             } catch (_) {}
         };
+        const openIfIconZone = (clientX, e) => {
+            const rect = input.getBoundingClientRect();
+            const tapFromRight = rect.right - clientX;
+            if (tapFromRight <= 40) openPicker(e);
+        };
         input.addEventListener('click', openPicker);
-        input.addEventListener('touchstart', openPicker, { passive: false });
+        input.addEventListener('pointerup', (e) => openIfIconZone(e.clientX, e));
+        input.addEventListener('touchend', (e) => {
+            const touch = e.changedTouches && e.changedTouches[0];
+            if (!touch) return;
+            openIfIconZone(touch.clientX, e);
+        }, { passive: false });
         input.addEventListener('keydown', (e) => {
             if (e.key !== 'Enter' && e.key !== ' ') return;
             openPicker(e);
