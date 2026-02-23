@@ -936,7 +936,17 @@ function getPerformanceRange(range) {
             dates.push(getLocalDateString(d));
             d.setDate(d.getDate() + 1);
         }
-        return { label: 'Calendar', days: dates.length || 1, dates };
+        return { label: 'Calendar Month', days: dates.length || 1, dates };
+    }
+    if (range === 'yearly') {
+        const start = new Date(today.getFullYear(), 0, 1);
+        const dates = [];
+        const d = new Date(start);
+        while (d <= today) {
+            dates.push(getLocalDateString(d));
+            d.setDate(d.getDate() + 1);
+        }
+        return { label: 'Yearly', days: dates.length || 1, dates };
     }
     if (range === 'last30') {
         const dates = Array.from({length: 30}, (_, i) => getLocalDateString(new Date(Date.now() - i * 864e5)));
