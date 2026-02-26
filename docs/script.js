@@ -1267,11 +1267,11 @@ function renderSelectedFoods() {
         f.servings = servings;
         total += servings * (Number(f.protein_per_serving) || 0);
         const li = document.createElement('li');
-        li.innerHTML = `<span class="selected-food-label">${f.name}</span><div class="selected-food-controls"><button type="button" class="selected-food-step" data-step="-0.5" aria-label="Decrease servings for ${f.name}">-</button><span class="selected-food-serving-value" aria-label="Servings for ${f.name}">${formatNumber(servings)}</span><button type="button" class="selected-food-step" data-step="0.5" aria-label="Increase servings for ${f.name}">+</button><button type="button" class="selected-food-remove" aria-label="Remove ${f.name}">×</button></div>`;
+        li.innerHTML = `<span class="selected-food-label">${f.name}</span><div class="selected-food-controls"><button type="button" class="selected-food-step" data-step="-0.25" aria-label="Decrease servings for ${f.name}">-</button><span class="selected-food-serving-value" aria-label="Servings for ${f.name}">${formatNumber(servings)}</span><button type="button" class="selected-food-step" data-step="0.25" aria-label="Increase servings for ${f.name}">+</button><button type="button" class="selected-food-remove" aria-label="Remove ${f.name}">×</button></div>`;
         li.querySelectorAll('.selected-food-step').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const delta = Number(btn.dataset.step) || 0;
-                const next = roundTo2(Math.max(0.5, servings + delta));
+                const next = roundTo2(Math.max(0.25, servings + delta));
                 selectedFoods[id].servings = next;
                 renderSelectedFoods();
                 autosaveProteinEntry().catch(() => {});
