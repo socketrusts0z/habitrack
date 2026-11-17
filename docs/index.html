@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#0b1220">
     <title>Habit Dashboard PWA</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
 <div id="splash-screen" class="splash-overlay hidden">
@@ -237,8 +237,21 @@
                         <button id="import-btn" class="btn-primary" style="flex: 1; margin-top: 0;">Import</button>
                         <button id="export-btn" class="btn-primary" style="flex: 1; margin-top: 0; background-color: #57606a;">Export</button>
                     </div>
-                    <button id="chatgpt-export-btn" class="btn-primary" style="width:100%; margin-top:8px;">Export for ChatGPT</button>
-                    <p id="chatgpt-export-status" class="text-muted" role="status" aria-live="polite" style="font-size:0.85rem; margin:8px 0 0;">Downloads a fresh JSON snapshot to attach to ChatGPT.</p>
+                    <details id="github-sync-settings" style="margin-top:16px;">
+                        <summary>GitHub sync settings</summary>
+                        <p>Upload habits, protein, screen time and weekly notes to your private repository. ChatGPT needs access to that repository to read them.</p>
+                        <label for="sync-repository">Private repository (owner/name)</label>
+                        <input id="sync-repository" type="text" placeholder="socketrusts0z/habitrack-data" autocomplete="off" spellcheck="false" style="width:100%;box-sizing:border-box;">
+                        <label for="sync-token">GitHub token</label>
+                        <input id="sync-token" type="password" autocomplete="off" spellcheck="false" placeholder="Paste token here, never in chat" style="width:100%;box-sizing:border-box;">
+                        <label><input id="sync-remember" type="checkbox"> Remember token on this device</label>
+                        <p style="font-size:0.85rem;">Default: token lasts until reload or close. Remembering saves it in browser storage, which scripts on this website can read. Use a token restricted to this data repository.</p>
+                        <p><a href="https://github.com/new" target="_blank" rel="noopener noreferrer">Create a private repository</a> · <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">Create a fine-grained token</a>. Select only your data repository; grant Contents: read and write, and set an expiration.</p>
+                        <button id="sync-forget" type="button">Forget token</button>
+                    </details>
+                    <button id="github-sync-btn" type="button" class="btn-primary" style="width:100%;margin-top:8px;">Sync now to GitHub</button>
+                    <p id="github-sync-status" role="status" aria-live="polite" style="font-size:0.85rem;margin:8px 0;">Not synced from this device.</p>
+                    <a id="github-sync-link" target="_blank" rel="noopener noreferrer" hidden>View uploaded snapshot</a>
                     <div class="section-divider"></div>
                     <button id="clear-all-btn" class="btn-danger-outline" style="width:100%;">Clear All Data</button>
                 </div>
@@ -255,6 +268,7 @@
 </div>
 <div id="emoji-picker" class="emoji-picker hidden"></div>
 <script src="script.js"></script>
+<script src="github-sync.js"></script>
 <script>
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
