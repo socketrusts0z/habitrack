@@ -28,10 +28,11 @@ const clearAllData = () => new Promise((res) => {
 });
 
 const exportAllData = () => new Promise((res) => {
-    if (isExtensionStorage) return chrome.storage.local.get(null, res);
+    if (isExtensionStorage) return chrome.storage.local.get(null, values => res(Object.fromEntries(Object.entries(values).filter(([key]) => !key.startsWith('habitrack_sync_')))));
     const all = {};
     for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
+        if (k.startsWith('habitrack_sync_')) continue;
         try { all[k] = JSON.parse(localStorage.getItem(k) || '[]'); } catch { all[k] = []; }
     }
     res(all);
