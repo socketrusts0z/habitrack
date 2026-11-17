@@ -1,11 +1,11 @@
-const CACHE_NAME = "habit-tracker-v3";
+const CACHE_NAME = "habit-tracker-v4";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./style.css",
-  "./script.js",
-  "./github-sync.js",
+  "./style.css?v=4",
+  "./script.js?v=4",
+  "./github-sync.js?v=4",
   "./icon-192.png",
   "./icon-512.png",
 ];

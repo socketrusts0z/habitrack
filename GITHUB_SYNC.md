@@ -16,3 +16,9 @@ Snapshots contain schema version, UTC export timestamp, local IANA timezone and 
 The PWA reads and writes GitHub's API directly; there is no backend and no embedded credential. An expired token, repository rules, or insufficient permissions can block uploads. Existing Export/Import continue to handle plain backup JSON; `latest.json` is a review snapshot with a wrapper, not a backup import file.
 
 Validation: `node tests/github-sync.test.cjs`, `node --check docs/github-sync.js`, and `node --check docs/script.js`. Network requests are mocked by the regression checks; these do not establish live browser or scheduled connector access.
+
+## Checking an upload
+
+The sync status appears above the button and reports checking, uploading and verifying. Success means a second API read at the returned commit confirmed the file's SHA. “View snapshot” opens that exact committed file and remains available after reload. Check `exported_at` inside the file to confirm freshness.
+
+Missing repository/token inputs now open Connection settings, focus the missing input and show a toast. The repository field is not prefilled: enter the actual `owner/name`. If “Loading sync controls” remains visible, scripts did not initialize; reopen/reload the updated app. Do not clear website data, because that also deletes locally stored logs. Versioned app assets ensure the service worker does not pair this UI with the old sync script.

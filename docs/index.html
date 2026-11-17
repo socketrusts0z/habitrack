@@ -6,7 +6,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b1220">
     <title>Habit Dashboard PWA</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=4">
     <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
@@ -237,21 +237,40 @@
                         <button id="import-btn" class="btn-primary" style="flex: 1; margin-top: 0;">Import</button>
                         <button id="export-btn" class="btn-primary" style="flex: 1; margin-top: 0; background-color: #57606a;">Export</button>
                     </div>
-                    <details id="github-sync-settings" style="margin-top:16px;">
-                        <summary>GitHub sync settings</summary>
-                        <p>Upload habits, protein, screen time and weekly notes to your private repository. ChatGPT needs access to that repository to read them.</p>
-                        <label for="sync-repository">Private repository (owner/name)</label>
-                        <input id="sync-repository" type="text" placeholder="socketrusts0z/habitrack-data" autocomplete="off" spellcheck="false" style="width:100%;box-sizing:border-box;">
-                        <label for="sync-token">GitHub token</label>
-                        <input id="sync-token" type="password" autocomplete="off" spellcheck="false" placeholder="Paste token here, never in chat" style="width:100%;box-sizing:border-box;">
-                        <label><input id="sync-remember" type="checkbox"> Remember token on this device</label>
-                        <p style="font-size:0.85rem;">Default: token lasts until reload or close. Remembering saves it in browser storage, which scripts on this website can read. Use a token restricted to this data repository.</p>
-                        <p><a href="https://github.com/new" target="_blank" rel="noopener noreferrer">Create a private repository</a> · <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">Create a fine-grained token</a>. Select only your data repository; grant Contents: read and write, and set an expiration.</p>
-                        <button id="sync-forget" type="button">Forget token</button>
-                    </details>
-                    <button id="github-sync-btn" type="button" class="btn-primary" style="width:100%;margin-top:8px;">Sync now to GitHub</button>
-                    <p id="github-sync-status" role="status" aria-live="polite" style="font-size:0.85rem;margin:8px 0;">Not synced from this device.</p>
-                    <a id="github-sync-link" target="_blank" rel="noopener noreferrer" hidden>View uploaded snapshot</a>
+                    <section class="sync-panel" aria-labelledby="sync-heading">
+                        <div class="sync-heading-row">
+                            <h3 id="sync-heading">GitHub sync</h3>
+                            <span class="sync-private-badge">Private</span>
+                        </div>
+                        <p class="sync-description">Send your latest logs to GitHub for ChatGPT to review.</p>
+                        <p id="github-sync-status" class="sync-status" role="status" aria-live="polite">Loading sync controls… If this stays visible, reload the app.</p>
+                        <div class="sync-action-row">
+                            <button id="github-sync-btn" type="button" class="btn-primary" disabled>Sync now</button>
+                            <a id="github-sync-link" target="_blank" rel="noopener noreferrer" hidden>View snapshot ↗</a>
+                        </div>
+                        <details id="github-sync-settings" class="sync-settings">
+                            <summary>Connection settings</summary>
+                            <div class="sync-settings-body">
+                                <div class="sync-field">
+                                    <label for="sync-repository">Private repository</label>
+                                    <input id="sync-repository" type="text" placeholder="owner/repository" autocomplete="off" spellcheck="false" aria-describedby="sync-repo-help">
+                                    <small id="sync-repo-help">Enter the actual name, e.g. socketrusts0z/habitrack-data. An example is not a saved connection.</small>
+                                </div>
+                                <div class="sync-field">
+                                    <label for="sync-token">GitHub token</label>
+                                    <input id="sync-token" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your fine-grained token" aria-describedby="sync-token-help">
+                                    <small id="sync-token-help">Only this private repository · Contents: read and write</small>
+                                </div>
+                                <label class="sync-remember-row"><input id="sync-remember" type="checkbox"><span>Remember token on this device</span></label>
+                                <small class="sync-storage-note">Otherwise it lasts until reload or close. Remembering uses browser storage, readable by scripts on this website.</small>
+                                <div class="sync-setup-links">
+                                    <a href="https://github.com/new" target="_blank" rel="noopener noreferrer">Create private repository ↗</a>
+                                    <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">Create token ↗</a>
+                                    <button id="sync-forget" type="button" class="sync-text-button">Forget token</button>
+                                </div>
+                            </div>
+                        </details>
+                    </section>
                     <div class="section-divider"></div>
                     <button id="clear-all-btn" class="btn-danger-outline" style="width:100%;">Clear All Data</button>
                 </div>
@@ -267,8 +286,8 @@
     <div id="delete-option" class="menu-option">Delete Habit</div>
 </div>
 <div id="emoji-picker" class="emoji-picker hidden"></div>
-<script src="script.js"></script>
-<script src="github-sync.js"></script>
+<script src="script.js?v=4"></script>
+<script src="github-sync.js?v=4"></script>
 <script>
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {

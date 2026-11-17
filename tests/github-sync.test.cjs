@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const syncCode = readFileSync('docs/github-sync.js', 'utf8');
 function app({ privateRepo = true, fileExists = false, failure, persistent = {} } = {}) {
     const ids = ['sync-repository','sync-token','sync-remember','github-sync-btn','github-sync-status','github-sync-link','sync-forget','clear-all-btn','github-sync-settings'];
-    const elements = Object.fromEntries(ids.map(id => [id, { value:'', checked:false, hidden:true, events:{}, addEventListener(type, fn) { this.events[type] = fn; } }]));
+    const elements = Object.fromEntries(ids.map(id => [id, { value:'', checked:false, hidden:true, dataset:{}, focus(){this.focused=true;}, events:{}, addEventListener(type, fn) { this.events[type] = fn; } }]));
     const storage = new Map(Object.entries({habit_history: JSON.stringify([{name:'睡眠',date:'2026-11-17'}]), ...persistent}));
     const calls = [];
     const context = { document: {getElementById:id=>elements[id]}, localStorage: {
@@ -13,8 +13,9 @@ function app({ privateRepo = true, fileExists = false, failure, persistent = {} 
     btoa:s=>Buffer.from(s,'binary').toString('base64'), fetch:async(url, options)=> {
         calls.push({url,options});
         let data = {private:privateRepo}, status = 200;
-        if (url.endsWith('/latest.json')) {
+        if (url.includes('/latest.json')) {
             if (options.method === 'PUT') {data={content:{sha:'file'},commit:{sha:'commit'}};status=failure||201;}
+            else if(url.includes('?ref=')) {data={sha:'file'};status=200;}
             else {data={sha:'existing'};status=fileExists?200:404;}
         }
         return {ok:status>=200&&status<300,status,json:async()=>data};
@@ -32,11 +33,12 @@ function app({ privateRepo = true, fileExists = false, failure, persistent = {} 
         assert.equal(snapshot.data.habit_history[0].name,'睡眠');
         assert.ok(snapshot.exported_at);assert.ok(snapshot.timezone);
         assert.ok(!JSON.stringify(snapshot).includes('secret'));assert.equal(a.storage.get('habitrack_sync_token'),undefined);
-        assert.equal(a.elements['github-sync-link'].hidden,false);
+        assert.equal(a.elements['github-sync-link'].hidden,false);assert.equal(a.elements['github-sync-status'].dataset.state,'success');assert.equal(a.elements['github-sync-btn'].textContent,'Sync now');assert.equal(a.calls.length,4);
     }
     const pub=app({privateRepo:false}); await pub.run();assert.equal(pub.calls.length,1);assert.match(pub.elements['github-sync-status'].textContent,/must be private/);
     const offline=app();offline.context.navigator.onLine=false;await offline.run();assert.equal(offline.calls.length,0);
-    const invalid=app();invalid.elements['sync-repository'].value='https://evil/owner';await invalid.run();assert.equal(invalid.calls.length,0);
+    const invalid=app();invalid.elements['sync-repository'].value='https://evil/owner';await invalid.run();assert.equal(invalid.calls.length,0);assert.equal(invalid.elements['sync-repository'].focused,true);assert.equal(invalid.elements['github-sync-status'].dataset.state,'error');
+    const blank=app();blank.elements['sync-token'].value='';await blank.run();assert.equal(blank.calls.length,0);assert.equal(blank.elements['sync-token'].focused,true);
     const memory=app();memory.elements['sync-remember'].checked=true;memory.elements['sync-remember'].events.change();assert.equal(memory.storage.get('habitrack_sync_token'),'secret');
     memory.elements['sync-remember'].checked=false;memory.elements['sync-remember'].events.change();assert.equal(memory.storage.has('habitrack_sync_token'),false);
     memory.elements['sync-remember'].checked=true;memory.elements['sync-remember'].events.change();memory.elements['sync-forget'].onclick();assert.equal(memory.elements['sync-token'].value,'');assert.equal(memory.storage.has('habitrack_sync_token'),false);
