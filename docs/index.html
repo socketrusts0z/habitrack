@@ -6,7 +6,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b1220">
     <title>Habit Dashboard PWA</title>
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css?v=5">
     <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
@@ -260,6 +260,8 @@
                                     <label for="sync-token">GitHub token</label>
                                     <input id="sync-token" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your fine-grained token" aria-describedby="sync-token-help">
                                     <small id="sync-token-help">Only this private repository · Contents: read and write</small>
+                                    <button id="sync-test" type="button" class="sync-test-button" disabled>Test connection</button>
+                                    <p id="sync-token-status" class="sync-token-status" role="status" aria-live="polite">Token not tested.</p>
                                 </div>
                                 <label class="sync-remember-row"><input id="sync-remember" type="checkbox"><span>Remember token on this device</span></label>
                                 <small class="sync-storage-note">Otherwise it lasts until reload or close. Remembering uses browser storage, readable by scripts on this website.</small>
@@ -286,8 +288,8 @@
     <div id="delete-option" class="menu-option">Delete Habit</div>
 </div>
 <div id="emoji-picker" class="emoji-picker hidden"></div>
-<script src="script.js?v=4"></script>
-<script src="github-sync.js?v=4"></script>
+<script src="script.js?v=5"></script>
+<script src="github-sync.js?v=5"></script>
 <script>
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {

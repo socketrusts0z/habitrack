@@ -468,3 +468,9 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
 .sync-setup-links { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; }
 .sync-text-button { border: 0; padding: 0; color: var(--text-muted); background: none; font: inherit; font-size: 12px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 @media (max-width: 768px) { .sync-field input[type="text"], .sync-field input[type="password"] { font-size: 16px; } }
+
+.sync-test-button { justify-self: start; padding: 7px 11px; border: 1px solid var(--border); border-radius: 7px; background: var(--subtle-bg); color: var(--text-main); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.sync-test-button:disabled { opacity: .65; cursor: wait; }
+.sync-token-status { margin: 0; font-size: 12px; line-height: 1.5; color: var(--text-muted); overflow-wrap: anywhere; }
+.sync-token-status[data-state="success"] { color: var(--primary); }
+.sync-token-status[data-state="error"] { color: var(--danger); }

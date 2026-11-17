@@ -11,6 +11,15 @@
     const button = byId('github-sync-btn');
     const status = byId('github-sync-status');
     const link = byId('github-sync-link');
+    const testButton = byId('sync-test');
+    const tokenStatus = byId('sync-token-status');
+    function credentialStatus(message, state = 'idle') {
+        tokenStatus.textContent = message;
+        tokenStatus.dataset.state = state;
+    }
+    function resetCredentialStatus() {
+        credentialStatus(tokenInput.value.trim() ? 'Token entered, not verified. Click Test connection.' : 'Token not entered.');
+    }
     let token = '';
     let busy = false;
     const settings = byId('github-sync-settings');
@@ -48,6 +57,7 @@
     remember.checked = Boolean(token);
     showLast();
     button.disabled = false;
+    testButton.disabled = false;
     function persistToken() {
         token = tokenInput.value.trim();
         // Always erase the old persistent value when switching to session-only mode.
@@ -60,13 +70,14 @@
             }
         }
     }
-    tokenInput.addEventListener('input', persistToken);
+    tokenInput.addEventListener('input', () => { persistToken(); resetCredentialStatus(); });
     remember.addEventListener('change', persistToken);
     byId('sync-forget').onclick = () => {
         token = ''; tokenInput.value = ''; remember.checked = false; remove('token');
+        resetCredentialStatus();
         report('Token forgotten on this device. Revoke it on GitHub too if needed.');
     };
-    repository.addEventListener('input', showLast);
+    repository.addEventListener('input', () => { showLast(); resetCredentialStatus(); });
     // Clearing all app data must also erase an in-memory/session credential.
     byId('clear-all-btn').addEventListener('click', () => {
         token = ''; tokenInput.value = ''; remember.checked = false; remove('token');
@@ -96,6 +107,42 @@
         if (response.status === 409 || response.status === 422) return new Error('Snapshot changed on GitHub or the branch is protected. Retry or check repository rules.');
         return new Error(`GitHub request failed (${response.status}). Try again later.`);
     }
+    async function verifyToken(credential) {
+        credentialStatus('Checking token with GitHub…', 'busy');
+        const response = await request('/user', credential);
+        if (!response.ok) throw apiError(response);
+        const user = await response.json();
+        if (!user.login) throw new Error('GitHub did not confirm the token identity.');
+        return user.login;
+    }
+    testButton.onclick = async () => {
+        if (busy) return;
+        persistToken();
+        const credential = token;
+        const repo = target();
+        if (!credential) { credentialStatus('No token entered.', 'error'); requireField(tokenInput, 'Paste your GitHub token first.'); return; }
+        busy = true; testButton.disabled = true; button.disabled = true;
+        testButton.textContent = 'Testing…';
+        try {
+            const login = await verifyToken(credential);
+            if (credential !== tokenInput.value.trim() || repo !== target()) throw new Error('Connection settings changed. Test again.');
+            credentialStatus(`Token valid for ${login}. Checking repository…`, 'busy');
+            if (!/^[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9_.-]+$/.test(repo) || /\/(\.|\.)$/.test(repo)) {
+                credentialStatus(`Token valid for ${login}. Enter owner/repository to check access.`, 'success'); return;
+            }
+            const response = await request(`/repos/${repo.split('/').map(encodeURIComponent).join('/')}`, credential);
+            if (!response.ok) {
+                credentialStatus(`Token valid for ${login}, but repository access failed (${response.status}). Check the repository name and this token’s selected repositories.`, 'error'); return;
+            }
+            const metadata = await response.json();
+            if (credential !== tokenInput.value.trim() || repo !== target()) throw new Error('Connection settings changed. Test again.');
+            if (metadata.private !== true) throw new Error(`Token valid for ${login}, but ${repo} is public. Choose a private repository.`);
+            credentialStatus(`Token valid for ${login} · Private repository accessible. Upload permission is confirmed only when Sync now succeeds.`, 'success');
+        } catch (error) {
+            credentialStatus(error.name === 'AbortError' || error instanceof TypeError
+                ? 'Could not reach GitHub. Token was not verified; check your connection and retry.' : error.message, 'error');
+        } finally { busy = false; testButton.disabled = false; button.disabled = false; testButton.textContent = 'Test connection'; }
+    };
     button.onclick = async () => {
         if (busy) return;
         const repo = target();
@@ -108,15 +155,18 @@
             requireField(tokenInput, 'Paste your GitHub token in Connection settings.'); return;
         }
         if (navigator.onLine === false) { report('Offline. Your data remains on this device; retry when connected.', 'error', true); return; }
-        busy = true; button.disabled = true; button.textContent = 'Syncing…'; link.hidden = true;
+        busy = true; button.disabled = true; testButton.disabled = true; button.textContent = 'Syncing…'; link.hidden = true;
         report('Checking private repository…', 'busy');
         const route = `/repos/${repo.split('/').map(encodeURIComponent).join('/')}`;
         let uploading = false;
         try {
+            const login = await verifyToken(credential);
+            credentialStatus(`Token valid for ${login}. Checking repository access…`, 'busy');
             const repoResponse = await request(route, credential);
             if (!repoResponse.ok) throw apiError(repoResponse);
             const metadata = await repoResponse.json();
             if (metadata.private !== true) throw new Error('Sync stopped: destination must be private. Choose a separate private data repository.');
+            credentialStatus(`Token valid for ${login} · Private repository accessible.`, 'success');
             // Read only known data keys: never arbitrary storage, tokens or sync settings.
             const data = {};
             for (const key of DATA_KEYS) {
@@ -157,12 +207,14 @@
             catch { saved = false; }
             link.href = `https://github.com/${repo}/blob/${result.commit.sha}/latest.json`;
             link.hidden = false;
+            credentialStatus('Token verified · Upload permission confirmed by successful upload.', 'success');
             report(`Verified upload at ${new Date(at).toLocaleString()} to ${repo}/latest.json.${saved ? '' : ' Browser could not save local sync status.'}`, 'success', true);
         } catch (error) {
+            credentialStatus(error.name === 'AbortError' || error instanceof TypeError ? 'Connection interrupted. Retry Test connection.' : error.message, 'error');
             report(error.name === 'AbortError' || error instanceof TypeError
                 ? (uploading ? 'Upload could not be confirmed. Check latest.json on GitHub before retrying.' : 'Could not reach GitHub. Check your connection and retry.')
                 : error.message, 'error', true);
-        } finally { busy = false; button.disabled = false; button.textContent = 'Sync now'; }
+        } finally { busy = false; button.disabled = false; testButton.disabled = false; button.textContent = 'Sync now'; }
 
     };
 })();
