@@ -454,6 +454,36 @@ function setupEventListeners() {
         a.download = `backup-${getLocalDateString()}.json`; a.click();
     };
 
+    el('chatgpt-export-btn').onclick = async () => {
+        const button = el('chatgpt-export-btn');
+        const status = el('chatgpt-export-status');
+        button.disabled = true;
+        status.textContent = 'Preparing your latest HabiTrack data…';
+        try {
+            const data = await exportAllData();
+            const snapshot = {
+                schema_version: 1,
+                exported_at: new Date().toISOString(),
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown',
+                source: 'HabiTrack PWA',
+                data
+            };
+            const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `habitrack-chatgpt-${getLocalDateString()}.json`;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            status.textContent = `Snapshot downloaded at ${new Date().toLocaleTimeString()}. Attach it to ChatGPT for your review.`;
+        } catch (error) {
+            status.textContent = 'Export failed. Please try again.';
+            console.error('HabiTrack ChatGPT export failed', error);
+        } finally {
+            button.disabled = false;
+        }
+    };
+
     el('clear-all-btn').onclick = async () => confirm("Clear all?") && (await clearAllData(), location.reload());
 }
 
