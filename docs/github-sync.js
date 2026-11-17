@@ -13,17 +13,33 @@
     const link = byId('github-sync-link');
     let token = '';
     let busy = false;
+    const settings = byId('github-sync-settings');
+    function report(message, state = 'idle', notify = false) {
+        status.textContent = message;
+        status.dataset.state = state;
+        if (notify && typeof showToast === 'function') showToast(message);
+    }
+    function requireField(field, message) {
+        settings.open = true;
+        report(message, 'error', true);
+        field.focus();
+    }
     const read = key => { try { return localStorage.getItem(PREFIX + key); } catch { return null; } };
     const remove = key => { try { localStorage.removeItem(PREFIX + key); } catch { /* storage may be blocked */ } };
     const write = (key, value) => localStorage.setItem(PREFIX + key, value);
     const target = () => repository.value.trim();
     function showLast() {
         link.hidden = true;
+        status.dataset.state = 'idle';
         try {
             const last = JSON.parse(read('last') || 'null');
+            if (last && last.repository === target() && /^[0-9a-f]{40}$/.test(last.commit || '')) {
+                link.href = `https://github.com/${last.repository}/blob/${last.commit}/latest.json`;
+                link.hidden = false;
+            }
             status.textContent = last && last.repository === target()
                 ? `Last synced from this device: ${new Date(last.at).toLocaleString()}. Click Sync now to upload changes.`
-                : 'Not synced from this device to this repository.';
+                : 'Ready to connect. Enter your private repository and token in Connection settings.';
         } catch { status.textContent = 'Not synced from this device.'; }
     }
     repository.value = read('repository') || '';
@@ -31,6 +47,7 @@
     tokenInput.value = token;
     remember.checked = Boolean(token);
     showLast();
+    button.disabled = false;
     function persistToken() {
         token = tokenInput.value.trim();
         // Always erase the old persistent value when switching to session-only mode.
@@ -47,7 +64,7 @@
     remember.addEventListener('change', persistToken);
     byId('sync-forget').onclick = () => {
         token = ''; tokenInput.value = ''; remember.checked = false; remove('token');
-        status.textContent = 'Token forgotten on this device. Revoke it on GitHub too if needed.';
+        report('Token forgotten on this device. Revoke it on GitHub too if needed.');
     };
     repository.addEventListener('input', showLast);
     // Clearing all app data must also erase an in-memory/session credential.
@@ -85,16 +102,14 @@
         persistToken();
         const credential = token;
         if (!/^[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9_.-]+$/.test(repo) || /\/(\.|\.\.)$/.test(repo)) {
-            status.textContent = 'Enter a private repository as owner/name in GitHub sync settings.';
-            byId('github-sync-settings').open = true; return;
+            requireField(repository, 'Enter the private repository name, e.g. socketrusts0z/habitrack-data.'); return;
         }
         if (!credential) {
-            status.textContent = 'Enter your GitHub token in sync settings.';
-            byId('github-sync-settings').open = true; return;
+            requireField(tokenInput, 'Paste your GitHub token in Connection settings.'); return;
         }
-        if (navigator.onLine === false) { status.textContent = 'Offline. Your data remains on this device; retry when connected.'; return; }
-        busy = true; button.disabled = true; link.hidden = true;
-        status.textContent = 'Checking private repository…';
+        if (navigator.onLine === false) { report('Offline. Your data remains on this device; retry when connected.', 'error', true); return; }
+        busy = true; button.disabled = true; button.textContent = 'Syncing…'; link.hidden = true;
+        report('Checking private repository…', 'busy');
         const route = `/repos/${repo.split('/').map(encodeURIComponent).join('/')}`;
         let uploading = false;
         try {
@@ -125,23 +140,29 @@
             let sha;
             if (current.ok) sha = (await current.json()).sha;
             else if (current.status !== 404) throw apiError(current);
-            status.textContent = 'Uploading latest.json…'; uploading = true;
+            report('Uploading latest.json…', 'busy'); uploading = true;
             const response = await request(fileRoute, credential, { method: 'PUT', body: JSON.stringify({
                 message: 'Sync HabiTrack snapshot', content, ...(sha ? { sha } : {})
             }) });
             if (!response.ok) throw apiError(response);
             const result = await response.json();
             if (!result.content?.sha || !result.commit?.sha) throw new Error('GitHub did not confirm the saved snapshot. Check latest.json before retrying.');
+            report('Verifying uploaded snapshot…', 'busy');
+            const verification = await request(`${fileRoute}?ref=${encodeURIComponent(result.commit.sha)}`, credential);
+            if (!verification.ok || (await verification.json()).sha !== result.content.sha) {
+                throw new Error('GitHub accepted the upload, but verification failed. Check latest.json before retrying.');
+            }
             let saved = true;
-            try { write('repository', repo); write('last', JSON.stringify({ repository: repo, at })); }
+            try { write('repository', repo); write('last', JSON.stringify({ repository: repo, at, commit: result.commit.sha })); }
             catch { saved = false; }
             link.href = `https://github.com/${repo}/blob/${result.commit.sha}/latest.json`;
             link.hidden = false;
-            status.textContent = `Synced ${new Date(at).toLocaleString()} to ${repo}/latest.json.${saved ? '' : ' Browser could not save your local sync status.'} Authorize ChatGPT for this repository to use it in a review.`;
+            report(`Verified upload at ${new Date(at).toLocaleString()} to ${repo}/latest.json.${saved ? '' : ' Browser could not save local sync status.'}`, 'success', true);
         } catch (error) {
-            status.textContent = error.name === 'AbortError' || error instanceof TypeError
+            report(error.name === 'AbortError' || error instanceof TypeError
                 ? (uploading ? 'Upload could not be confirmed. Check latest.json on GitHub before retrying.' : 'Could not reach GitHub. Check your connection and retry.')
-                : error.message;
-        } finally { busy = false; button.disabled = false; }
+                : error.message, 'error', true);
+        } finally { busy = false; button.disabled = false; button.textContent = 'Sync now'; }
+
     };
 })();
