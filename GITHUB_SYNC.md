@@ -1,24 +1,20 @@
 # HabiTrack GitHub sync
 
-The deployed GitHub Pages app is in `docs/`. Open its Data tab and expand GitHub sync settings.
+Open **Data → GitHub sync → Connection settings** in the app.
 
-1. Create a **private** repository, for example `socketrusts0z/habitrack-data`. Initialize it with a README so it has a default branch. Do not use the public HabiTrack source repository.
-2. In GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens, create an expiring token restricted to that single repository. Grant repository **Contents: Read and write**. If an organization owns the repository, its approval policies may also apply.
-3. Enter `owner/repository` and the token directly in the PWA. Never paste the token into ChatGPT or commit it to source control.
-4. Leave “Remember token on this device” off to keep it only until reload/close. Selecting it stores the token in this origin's browser localStorage, accessible to JavaScript running on that origin. Forget token removes the local saved value; revoke the token on GitHub if it should stop working everywhere.
-5. Click **Sync now to GitHub**. Success appears only after GitHub confirms the commit. The snapshot link points at that commit's `latest.json`.
-6. Give the ChatGPT GitHub app access to the data repository, and verify it can fetch `latest.json`. Test a scheduled read before creating a weekly review; a working PWA upload does not establish scheduled ChatGPT access.
+1. Create a private data repository and initialize it with a README. Keep it separate from the public HabiTrack code repository.
+2. Create an expiring fine-grained GitHub token limited to that repository, with **Contents: Read and write**. Paste it directly into the PWA.
+3. Enter the private repository as `owner/name`, then click **Test connection**. This checks access without sending your logs. Optionally select **Remember token on this device** to store the token in browser storage. **Forget token** clears the local copy.
+4. Click **Sync now** on the device with your complete history. The first incremental sync writes all months once. Each later sync writes only changed files. The snapshot link opens the index at the confirmed Git commit.
 
-This is manual one-click upload, not background synchronization or multi-device merging. Each successful click replaces `latest.json` with this device's full snapshot. Use the device with your complete logs. Git history retains older versions, including deleted entries or notes. The token is used only for GitHub API calls, and sync settings are excluded from normal exports. The upload allowlist contains habit definitions/history/icons, hidden/default habit, protein/food records, screen-time records, and weekly snippets. Review those notes before uploading.
+**Export** still downloads one complete local backup for **Import**. It excludes sync credentials and settings.
 
-Snapshots contain schema version, UTC export timestamp, local IANA timezone and a `data` object. Missing records mean missing logs, not necessarily missed habits. The 750 KB snapshot limit keeps the file readable through the standard contents API. Offline uploads must be retried manually. Conflicts do not retry or overwrite silently; re-read the destination and retry intentionally. Unconfirmed network responses advise checking GitHub before retrying.
+## GitHub format
 
-The PWA reads and writes GitHub's API directly; there is no backend and no embedded credential. An expired token, repository rules, or insufficient permissions can block uploads. Existing Export/Import continue to handle plain backup JSON; `latest.json` is a review snapshot with a wrapper, not a backup import file.
+`habitrack/index.json` contains schema version 2, the last changed snapshot timestamp, the local timezone, and a mapping from file paths to Git blob SHAs. `habitrack/settings.json` contains habit definitions and preferences, food definitions, and weekly snippets. `habitrack/logs/YYYY-MM.json` contains the dated habit, protein, and screen-time records for each month. Edited or removed records update their original month, and deleting a month's last record removes the month file in the current commit. Past Git commits can still contain removed records.
 
-Validation: `node tests/github-sync.test.cjs`, `node --check docs/github-sync.js`, and `node --check docs/script.js`. Network requests are mocked by the regression checks; these do not establish live browser or scheduled connector access.
+The index and changed files publish together in one non-forced commit. No data change means no commit. Readers should pin the commit or validate each file against the index. The legacy `latest.json` remains available after migration. Readers can use it when the index is absent. After migrating, reload any other open HabiTrack tabs before syncing again.
 
-## Checking an upload
+This sync mirrors the history on the device that uploads it. It does not merge devices. A device without a matching sync baseline can adopt an identical snapshot but cannot overwrite divergent data. If the first incremental sync sees different legacy data, return to the device with the previous sync state and the complete local history. Keep a full Export backup before reconciling differing devices.
 
-The sync status appears above the button and reports checking, uploading and verifying. Success means a second API read at the returned commit confirmed the file's SHA. “View snapshot” opens that exact committed file and remains available after reload. Check `exported_at` inside the file to confirm freshness.
-
-Missing repository/token inputs now open Connection settings, focus the missing input and show a toast. The repository field is not prefilled: enter the actual `owner/name`. If “Loading sync controls” remains visible, scripts did not initialize; reopen/reload the updated app. Do not clear website data, because that also deletes locally stored logs. Versioned app assets ensure the service worker does not pair this UI with the old sync script.
+Run `node tests/github-sync.test.cjs` from the repository root to check sync behavior against mocked GitHub responses.

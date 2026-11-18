@@ -4,6 +4,9 @@
     const PREFIX = 'habitrack_sync_';
     const DATA_KEYS = ['habits_list', 'hidden_habits', 'default_habit', 'habit_history',
         'habit_icons', 'protein_intake', 'food_list', 'screentime_history', 'weekly_snippets'];
+    const MONTHLY_KEYS = ['habit_history', 'protein_intake', 'screentime_history'];
+    const INDEX_PATH = 'habitrack/index.json';
+    const SETTINGS_PATH = 'habitrack/settings.json';
     const byId = id => document.getElementById(id);
     const repository = byId('sync-repository');
     const tokenInput = byId('sync-token');
@@ -43,7 +46,7 @@
         try {
             const last = JSON.parse(read('last') || 'null');
             if (last && last.repository === target() && /^[0-9a-f]{40}$/.test(last.commit || '')) {
-                link.href = `https://github.com/${last.repository}/blob/${last.commit}/latest.json`;
+                link.href = `https://github.com/${last.repository}/blob/${last.commit}/${last.indexSha ? INDEX_PATH : 'latest.json'}`;
                 link.hidden = false;
             }
             status.textContent = last && last.repository === target()
@@ -82,12 +85,108 @@
     byId('clear-all-btn').addEventListener('click', () => {
         token = ''; tokenInput.value = ''; remember.checked = false; remove('token');
     });
-    function encodeContent(value) {
-        const bytes = new TextEncoder().encode(JSON.stringify(value, null, 2));
-        if (bytes.length > 750000) throw new Error('Snapshot exceeds the 750 KB sync limit. Use Export for a backup.');
-        let binary = '';
-        for (let i = 0; i < bytes.length; i += 8192) binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
-        return btoa(binary);
+    function splitData(data) {
+        const settings = Object.fromEntries(Object.entries(data).filter(([key]) => !MONTHLY_KEYS.includes(key)));
+        const files = new Map([[SETTINGS_PATH, settings]]);
+        for (const key of MONTHLY_KEYS) {
+            if (data[key] === undefined) continue;
+            if (!Array.isArray(data[key])) throw new Error(`Unexpected format for ${key}. Sync stopped.`);
+            for (const row of data[key]) {
+                if (!/^\d{4}-(0[1-9]|1[0-2])-\d{2}$/.test(row?.date || '')) {
+                    throw new Error(`An entry in ${key} has no valid date. Sync stopped.`);
+                }
+                const path = `habitrack/logs/${row.date.slice(0, 7)}.json`;
+                if (!files.has(path)) files.set(path, {});
+                const month = files.get(path);
+                (month[key] ??= []).push(row);
+            }
+        }
+        return files;
+    }
+    function serialize(value) {
+        // Stable object key order while preserving the order of entries in each array.
+        return JSON.stringify(value, (_key, item) => {
+            if (!item || typeof item !== 'object' || Array.isArray(item)) return item;
+            return Object.fromEntries(Object.keys(item).sort().map(key => [key, item[key]]));
+        }, 2) + '\n';
+    }
+    async function blobSha(content) {
+        const encoder = new TextEncoder();
+        const bytes = encoder.encode(content);
+        if (bytes.length > 750000) throw new Error('One sync file exceeds 750 KB. Your local Export backup is still available.');
+        // Git identifies a blob by the SHA-1 of its header and UTF-8 bytes.
+        const gitBlob = encoder.encode(`blob ${bytes.length}\0${content}`);
+        const digest = await crypto.subtle.digest('SHA-1', gitBlob);
+        return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+    }
+    function decodeFile(file) {
+        return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(file.content), c => c.charCodeAt(0))));
+    }
+    async function syncRepository(route, credential, branch, repo, data) {
+        const branchPath = branch.split('/').map(encodeURIComponent).join('/');
+        const readJson = async (path, optional = false) => {
+            const response = await request(route + path, credential);
+            if (optional && response.status === 404) return null;
+            if (!response.ok) throw apiError(response);
+            return response.json();
+        };
+        const post = async (path, body, method = 'POST') => {
+            const response = await request(route + path, credential, {method, body: JSON.stringify(body)});
+            if (!response.ok) throw apiError(response);
+            return response.json();
+        };
+        const getFile = (path, ref) => readJson(`/contents/${path}?ref=${encodeURIComponent(ref)}`, true);
+        const head = (await readJson(`/git/ref/heads/${branchPath}`)).object.sha;
+        const index = await getFile(INDEX_PATH, head);
+        const previous = index ? decodeFile(index) : null;
+        const validPath = path => path === SETTINGS_PATH || /^habitrack\/logs\/\d{4}-(0[1-9]|1[0-2])\.json$/.test(path);
+        if (index && (previous?.schema_version !== 2 || !previous.files
+            || !Object.hasOwn(previous.files, SETTINGS_PATH)
+            || !Object.entries(previous.files).every(([path, sha]) => validPath(path) && /^[0-9a-f]{40}$/.test(sha)))) {
+            throw new Error('GitHub sync index is invalid. Sync stopped to protect existing data.');
+        }
+        const files = {};
+        const changes = [];
+        const remoteFiles = previous?.files || {};
+        for (const [path, value] of splitData(data)) {
+            const content = serialize(value);
+            const sha = await blobSha(content);
+            files[path] = sha;
+            if (remoteFiles[path] !== sha) changes.push({path, mode: '100644', type: 'blob', content});
+        }
+        for (const path of Object.keys(remoteFiles)) {
+            if (!Object.hasOwn(files, path)) changes.push({path, mode: '100644', type: 'blob', sha: null});
+        }
+        if (!changes.length) return {commit: head, indexSha: index.sha, at: previous.exported_at, changed: 0};
+        const last = JSON.parse(read('last') || 'null');
+        const sameRepo = last?.repository?.toLowerCase() === repo.toLowerCase();
+        const conflict = () => new Error('GitHub has data from another sync. Use the device that last synced, or ask for help reconciling the logs. No files were overwritten.');
+        if (index && (!sameRepo || last.indexSha !== index.sha)) throw conflict();
+        if (!index) {
+            const legacy = await getFile('latest.json', head);
+            if (legacy) {
+                const legacyBase = sameRepo && /^[a-f0-9]{40}$/.test(last.commit || '')
+                    ? await getFile('latest.json', last.commit) : null;
+                if (legacyBase?.sha !== legacy.sha && serialize(decodeFile(legacy).data) !== serialize(data)) throw conflict();
+            }
+        }
+        const at = new Date().toISOString();
+        const manifest = {schema_version: 2, exported_at: at,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown', files};
+        const content = serialize(manifest);
+        const indexSha = await blobSha(content);
+        const base = await readJson(`/git/commits/${head}`);
+        const tree = await post('/git/trees', {base_tree: base.tree.sha, tree: [
+            ...changes, {path: INDEX_PATH, mode: '100644', type: 'blob', content}
+        ]});
+        const commit = await post('/git/commits', {message: 'Sync changed HabiTrack files', tree: tree.sha, parents: [head]});
+        report('Publishing changed files…', 'busy');
+        await post(`/git/refs/heads/${branchPath}`, {sha: commit.sha, force: false}, 'PATCH');
+        report('Verifying synced files…', 'busy');
+        if ((await getFile(INDEX_PATH, commit.sha))?.sha !== indexSha) {
+            throw new Error('GitHub accepted the commit but the index could not be verified. Check the repository before retrying.');
+        }
+        return {commit: commit.sha, indexSha, at, changed: changes.length};
     }
     async function request(path, credential, options = {}) {
         const controller = new AbortController();
@@ -181,38 +280,26 @@
                     }
                 }
             }
-            const at = new Date().toISOString();
-            const content = encodeContent({ schema_version: 1, exported_at: at,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown',
-                source: 'HabiTrack PWA', data });
-            const fileRoute = `${route}/contents/latest.json`;
-            const current = await request(fileRoute, credential);
-            let sha;
-            if (current.ok) sha = (await current.json()).sha;
-            else if (current.status !== 404) throw apiError(current);
-            report('Uploading latest.json…', 'busy'); uploading = true;
-            const response = await request(fileRoute, credential, { method: 'PUT', body: JSON.stringify({
-                message: 'Sync HabiTrack snapshot', content, ...(sha ? { sha } : {})
-            }) });
-            if (!response.ok) throw apiError(response);
-            const result = await response.json();
-            if (!result.content?.sha || !result.commit?.sha) throw new Error('GitHub did not confirm the saved snapshot. Check latest.json before retrying.');
-            report('Verifying uploaded snapshot…', 'busy');
-            const verification = await request(`${fileRoute}?ref=${encodeURIComponent(result.commit.sha)}`, credential);
-            if (!verification.ok || (await verification.json()).sha !== result.content.sha) {
-                throw new Error('GitHub accepted the upload, but verification failed. Check latest.json before retrying.');
-            }
+            if (!metadata.default_branch) throw new Error('Initialize the private repository with a README before syncing.');
+            report('Checking for changed files…', 'busy');
+            uploading = true;
+            const result = await syncRepository(route, credential, metadata.default_branch, repo, data);
             let saved = true;
-            try { write('repository', repo); write('last', JSON.stringify({ repository: repo, at, commit: result.commit.sha })); }
-            catch { saved = false; }
-            link.href = `https://github.com/${repo}/blob/${result.commit.sha}/latest.json`;
+            try {
+                write('repository', repo);
+                write('last', JSON.stringify({repository: repo, at: result.at, commit: result.commit, indexSha: result.indexSha}));
+            } catch { saved = false; }
+            link.href = `https://github.com/${repo}/blob/${result.commit}/${INDEX_PATH}`;
             link.hidden = false;
-            credentialStatus('Token verified · Upload permission confirmed by successful upload.', 'success');
-            report(`Verified upload at ${new Date(at).toLocaleString()} to ${repo}/latest.json.${saved ? '' : ' Browser could not save local sync status.'}`, 'success', true);
+            if (result.changed) credentialStatus('Token verified · Upload permission confirmed.', 'success');
+            const message = result.changed
+                ? `Verified sync · ${result.changed} data file${result.changed === 1 ? '' : 's'} updated.`
+                : 'Already up to date. Nothing uploaded.';
+            report(message + (saved ? '' : ' Browser could not save local sync status.'), 'success', true);
         } catch (error) {
             credentialStatus(error.name === 'AbortError' || error instanceof TypeError ? 'Connection interrupted. Retry Test connection.' : error.message, 'error');
             report(error.name === 'AbortError' || error instanceof TypeError
-                ? (uploading ? 'Upload could not be confirmed. Check latest.json on GitHub before retrying.' : 'Could not reach GitHub. Check your connection and retry.')
+                ? (uploading ? 'Upload could not be confirmed. Check habitrack/index.json on GitHub before retrying.' : 'Could not reach GitHub. Check your connection and retry.')
                 : error.message, 'error', true);
         } finally { busy = false; button.disabled = false; testButton.disabled = false; button.textContent = 'Sync now'; }
 
