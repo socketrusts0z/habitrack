@@ -1285,6 +1285,26 @@ function renderSelectedFoods() {
             renderSelectedFoods();
             autosaveProteinEntry().catch(() => {});
         };
+        if (f.kind === 'recipe' && Array.isArray(f.ingredients)) {
+            li.classList.add('logged-recipe');
+            const header = document.createElement('div');
+            header.className = 'logged-recipe-heading';
+            while (li.firstChild) header.append(li.firstChild);
+            const ingredients = document.createElement('ul');
+            ingredients.className = 'logged-recipe-ingredients';
+            for (const item of f.ingredients) {
+                const row = document.createElement('li');
+                const name = document.createElement('span');
+                name.textContent = item.name;
+                const amount = document.createElement('span');
+                amount.textContent = `${formatNumber(roundTo2(item.servings * servings))} servings · ${formatNumber(roundTo2(item.servings * servings * item.protein_per_serving))}g`;
+                row.append(name, amount);
+                ingredients.append(row);
+            }
+            li.querySelector('.selected-food-serving-value').setAttribute('aria-label', 'Recipe servings');
+            li.querySelector('.selected-food-remove').setAttribute('aria-label', 'Remove recipe');
+            li.append(header, ingredients);
+        }
         list.appendChild(li);
     });
     total = roundTo2(total);
@@ -1469,12 +1489,17 @@ async function setupRecipes() {
         el('recipe-name').focus();
     }
     async function logRecipe(recipe, control) {
+        if (control.disabled) return;
         control.disabled = true;
         try {
-            for (const item of recipe.ingredients) {
-                const existing = selectedFoods[item.id];
-                selectedFoods[item.id] = {...(existing || item), servings: roundTo2((existing?.servings || 0) + item.servings)};
-            }
+            const key = 'recipe:' + recipe.id;
+            const existing = selectedFoods[key];
+            selectedFoods[key] = existing
+                ? {...existing, servings: roundTo2(existing.servings + 1)}
+                : {id: key, name: recipe.name, kind: 'recipe',
+                    ingredients: recipe.ingredients.map(item => ({...item})),
+                    protein_per_serving: roundTo2(recipe.ingredients.reduce((sum, item) => sum + item.servings * item.protein_per_serving, 0)),
+                    servings: 1};
             renderSelectedFoods();
             await autosaveProteinEntry();
             status.textContent = `Logged ${recipe.name}. You can adjust servings below.`;
@@ -1492,12 +1517,15 @@ async function setupRecipes() {
             row.className = 'recipe-saved';
             const heading = document.createElement('div');
             heading.className = 'recipe-card-heading';
-            const name = document.createElement('strong');
+            const name = button('', () => logRecipe(recipe, name));
+            name.className = 'recipe-log-main';
+            name.setAttribute('aria-label', `Add ${recipe.name} to food log`);
             const grams = recipe.ingredients.reduce((sum, item) => sum + item.servings * item.protein_per_serving, 0);
             name.textContent = `${recipe.name} · ${formatNumber(roundTo2(grams))}g`;
-            const log = button('Log', () => logRecipe(recipe, log));
-            log.setAttribute('aria-label', `Log ${recipe.name}`);
-            heading.append(name, log, button('Edit', () => edit(recipe)), button('Delete', async () => {
+            row.onclick = event => {
+                if (!event.target.closest('button, details, a, input, select')) logRecipe(recipe, name);
+            };
+            heading.append(name, button('Edit', () => edit(recipe)), button('Delete', async () => {
                 if (!confirm(`Delete the saved recipe “${recipe.name}”?`)) return;
                 await setData('food_recipes', (await recipes()).filter(item => item.id !== recipe.id));
                 if (editing?.id === recipe.id) form.classList.add('hidden');
