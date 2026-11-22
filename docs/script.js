@@ -1301,8 +1301,8 @@ function renderSelectedFoods() {
                 row.append(name, amount);
                 ingredients.append(row);
             }
-            li.querySelector('.selected-food-serving-value').setAttribute('aria-label', 'Recipe servings');
-            li.querySelector('.selected-food-remove').setAttribute('aria-label', 'Remove recipe');
+            header.querySelector('.selected-food-serving-value').setAttribute('aria-label', 'Recipe servings');
+            header.querySelector('.selected-food-remove').setAttribute('aria-label', 'Remove recipe');
             li.append(header, ingredients);
         }
         list.appendChild(li);
