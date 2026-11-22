@@ -1489,18 +1489,36 @@ async function setupRecipes() {
         if (!saved.length) list.textContent = 'Save foods you often log together.';
         for (const recipe of saved) {
             const row = document.createElement('div');
-            row.className = 'recipe-row recipe-saved';
+            row.className = 'recipe-saved';
+            const heading = document.createElement('div');
+            heading.className = 'recipe-card-heading';
             const name = document.createElement('strong');
             const grams = recipe.ingredients.reduce((sum, item) => sum + item.servings * item.protein_per_serving, 0);
             name.textContent = `${recipe.name} · ${formatNumber(roundTo2(grams))}g`;
             const log = button('Log', () => logRecipe(recipe, log));
             log.setAttribute('aria-label', `Log ${recipe.name}`);
-            row.append(name, log, button('Edit', () => edit(recipe)), button('Delete', async () => {
+            heading.append(name, log, button('Edit', () => edit(recipe)), button('Delete', async () => {
                 if (!confirm(`Delete the saved recipe “${recipe.name}”?`)) return;
                 await setData('food_recipes', (await recipes()).filter(item => item.id !== recipe.id));
                 if (editing?.id === recipe.id) form.classList.add('hidden');
                 await render();
             }));
+            const ingredients = document.createElement('details');
+            ingredients.className = 'recipe-card-ingredients';
+            const summary = document.createElement('summary');
+            summary.textContent = `${recipe.ingredients.length} ingredients`;
+            const items = document.createElement('ul');
+            for (const ingredient of recipe.ingredients) {
+                const item = document.createElement('li');
+                const label = document.createElement('span');
+                label.textContent = ingredient.name;
+                const amount = document.createElement('span');
+                amount.textContent = `${formatNumber(ingredient.servings)} servings · ${formatNumber(roundTo2(ingredient.servings * ingredient.protein_per_serving))}g`;
+                item.append(label, amount);
+                items.append(item);
+            }
+            ingredients.append(summary, items);
+            row.append(heading, ingredients);
             list.append(row);
         }
     }
