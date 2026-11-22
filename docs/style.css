@@ -474,3 +474,16 @@ input[type="text"], input[type="date"], input[type="number"], textarea {
 .sync-token-status { margin: 0; font-size: 12px; line-height: 1.5; color: var(--text-muted); overflow-wrap: anywhere; }
 .sync-token-status[data-state="success"] { color: var(--primary); }
 .sync-token-status[data-state="error"] { color: var(--danger); }
+
+.recipe-panel { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px; }
+.recipe-heading, .recipe-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.recipe-heading { justify-content: space-between; }
+.recipe-heading h3 { font-size: 15px; margin: 0; }
+#recipe-list, #recipe-form { margin-top: 10px; }
+#recipe-form { background: var(--subtle-bg); border-radius: 8px; padding: 12px; }
+#recipe-form input { box-sizing: border-box; }
+.recipe-row { margin: 8px 0; }
+.recipe-row strong, .recipe-row select { flex: 1; min-width: 100px; }
+.recipe-row input[type="number"] { width: 80px; }
+.recipe-panel button:not(.btn-primary), .recipe-row select { background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+#recipe-status, #recipe-list { font-size: 13px; }
