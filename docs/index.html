@@ -6,7 +6,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b1220">
     <title>Habit Dashboard PWA</title>
-    <link rel="stylesheet" href="style.css?v=6">
+    <link rel="stylesheet" href="style.css?v=7">
     <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
@@ -149,6 +149,19 @@
                     </div>
                 </div>
                 <div id="food-gallery" class="food-grid"></div>
+                <div class="recipe-panel">
+                    <div class="recipe-heading"><h3>Saved recipes</h3><button id="recipe-new" type="button" class="btn-primary">New recipe</button></div>
+                    <div id="recipe-list"></div>
+                    <form id="recipe-form" class="hidden">
+                        <label for="recipe-name">Recipe name</label>
+                        <input id="recipe-name" type="text" maxlength="80" required placeholder="Protein shake">
+                        <div id="recipe-ingredients"></div>
+                        <button id="recipe-add" type="button">Add ingredient</button>
+                        <button type="submit" class="btn-primary">Save recipe</button>
+                        <button id="recipe-cancel" type="button">Cancel</button>
+                    </form>
+                    <p id="recipe-status" role="status"></p>
+                </div>
                 <div class="selection-box">
                     <ul id="selected-foods-list"></ul>
                 </div>
@@ -288,8 +301,8 @@
     <div id="delete-option" class="menu-option">Delete Habit</div>
 </div>
 <div id="emoji-picker" class="emoji-picker hidden"></div>
-<script src="script.js?v=6"></script>
-<script src="github-sync.js?v=6"></script>
+<script src="script.js?v=7"></script>
+<script src="github-sync.js?v=7"></script>
 <script>
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {

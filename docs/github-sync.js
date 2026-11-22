@@ -3,7 +3,7 @@
     'use strict';
     const PREFIX = 'habitrack_sync_';
     const DATA_KEYS = ['habits_list', 'hidden_habits', 'default_habit', 'habit_history',
-        'habit_icons', 'protein_intake', 'food_list', 'screentime_history', 'weekly_snippets'];
+        'habit_icons', 'food_recipes', 'protein_intake', 'food_list', 'screentime_history', 'weekly_snippets'];
     const MONTHLY_KEYS = ['habit_history', 'protein_intake', 'screentime_history'];
     const INDEX_PATH = 'habitrack/index.json';
     const SETTINGS_PATH = 'habitrack/settings.json';

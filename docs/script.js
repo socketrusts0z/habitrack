@@ -131,6 +131,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await setupTrendChartTabs();
     await refreshDashboard();
     setupEventListeners();
+    await setupRecipes();
     setupWeekPickerTapSupport();
     await setupMobileTabs();
     setupGridHaptics();
@@ -1268,7 +1269,8 @@ function renderSelectedFoods() {
         f.servings = servings;
         total += servings * (Number(f.protein_per_serving) || 0);
         const li = document.createElement('li');
-        li.innerHTML = `<span class="selected-food-label">${f.name}</span><div class="selected-food-controls"><button type="button" class="selected-food-step" data-step="-0.25" aria-label="Decrease servings for ${f.name}">-</button><span class="selected-food-serving-value" aria-label="Servings for ${f.name}">${formatNumber(servings)}</span><button type="button" class="selected-food-step" data-step="0.25" aria-label="Increase servings for ${f.name}">+</button><button type="button" class="selected-food-remove" aria-label="Remove ${f.name}">×</button></div>`;
+        li.innerHTML = `<span class="selected-food-label"></span><div class="selected-food-controls"><button type="button" class="selected-food-step" data-step="-0.25" aria-label="Decrease servings">-</button><span class="selected-food-serving-value" aria-label="Servings">${formatNumber(servings)}</span><button type="button" class="selected-food-step" data-step="0.25" aria-label="Increase servings">+</button><button type="button" class="selected-food-remove" aria-label="Remove food">×</button></div>`;
+        li.querySelector('.selected-food-label').textContent = f.name;
         li.querySelectorAll('.selected-food-step').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const delta = Number(btn.dataset.step) || 0;
@@ -1418,4 +1420,119 @@ function extractSingleEmoji(input) {
     const candidate = graphemes[0];
     const emojiRegex = /\p{Extended_Pictographic}/u;
     return emojiRegex.test(candidate) ? candidate : null;
+}
+
+async function setupRecipes() {
+    const form = el('recipe-form');
+    const fields = el('recipe-ingredients');
+    const status = el('recipe-status');
+    let editing = null;
+    let catalog = [];
+    const recipes = async () => {
+        const data = await getData('food_recipes');
+        return Array.isArray(data) ? data : [];
+    };
+    function button(label, action) {
+        const control = document.createElement('button');
+        control.type = 'button';
+        control.textContent = label;
+        control.onclick = action;
+        return control;
+    }
+    function addIngredient(ingredient = null) {
+        const row = document.createElement('div');
+        row.className = 'recipe-row';
+        const picker = document.createElement('select');
+        picker.setAttribute('aria-label', 'Food');
+        const placeholder = new Option('Choose food', '');
+        placeholder.disabled = true;
+        picker.add(placeholder);
+        for (const food of catalog) picker.add(new Option(food.name, String(food.id)));
+        if (ingredient && !catalog.some(food => String(food.id) === String(ingredient.id))) {
+            picker.add(new Option(ingredient.name, String(ingredient.id)));
+        }
+        picker.value = ingredient ? String(ingredient.id) : '';
+        picker.required = true;
+        const servings = document.createElement('input');
+        Object.assign(servings, {type: 'number', min: '0.01', step: '0.01', required: true, value: ingredient?.servings ?? 1});
+        servings.setAttribute('aria-label', 'Servings');
+        row.append(picker, servings, button('Remove', () => row.remove()));
+        fields.append(row);
+    }
+    async function edit(recipe = null) {
+        editing = recipe;
+        catalog = await getData('food_list');
+        el('recipe-name').value = recipe?.name ?? '';
+        fields.replaceChildren();
+        for (const ingredient of recipe?.ingredients ?? [null]) addIngredient(ingredient);
+        form.classList.remove('hidden');
+        el('recipe-name').focus();
+    }
+    async function logRecipe(recipe, control) {
+        control.disabled = true;
+        try {
+            for (const item of recipe.ingredients) {
+                const existing = selectedFoods[item.id];
+                selectedFoods[item.id] = {...(existing || item), servings: roundTo2((existing?.servings || 0) + item.servings)};
+            }
+            renderSelectedFoods();
+            await autosaveProteinEntry();
+            status.textContent = `Logged ${recipe.name}. You can adjust servings below.`;
+        } finally {
+            control.disabled = false;
+        }
+    }
+    async function render() {
+        const list = el('recipe-list');
+        list.replaceChildren();
+        const saved = await recipes();
+        if (!saved.length) list.textContent = 'Save foods you often log together.';
+        for (const recipe of saved) {
+            const row = document.createElement('div');
+            row.className = 'recipe-row recipe-saved';
+            const name = document.createElement('strong');
+            const grams = recipe.ingredients.reduce((sum, item) => sum + item.servings * item.protein_per_serving, 0);
+            name.textContent = `${recipe.name} · ${formatNumber(roundTo2(grams))}g`;
+            const log = button('Log', () => logRecipe(recipe, log));
+            log.setAttribute('aria-label', `Log ${recipe.name}`);
+            row.append(name, log, button('Edit', () => edit(recipe)), button('Delete', async () => {
+                if (!confirm(`Delete the saved recipe “${recipe.name}”?`)) return;
+                await setData('food_recipes', (await recipes()).filter(item => item.id !== recipe.id));
+                if (editing?.id === recipe.id) form.classList.add('hidden');
+                await render();
+            }));
+            list.append(row);
+        }
+    }
+    el('recipe-new').onclick = () => edit();
+    el('recipe-add').onclick = () => addIngredient();
+    el('recipe-cancel').onclick = () => form.classList.add('hidden');
+    form.onsubmit = async event => {
+        event.preventDefault();
+        const name = el('recipe-name').value.trim();
+        const ingredients = [];
+        const seen = new Set();
+        for (const row of fields.children) {
+            const id = row.querySelector('select').value;
+            const food = [...catalog, ...(editing?.ingredients ?? [])].find(item => String(item.id) === id);
+            const servings = Number(row.querySelector('input').value);
+            if (!food || !Number.isFinite(servings) || servings <= 0 || seen.has(id)) {
+                status.textContent = 'Choose a different food for each row and enter a positive serving amount.';
+                return;
+            }
+            seen.add(id);
+            ingredients.push({id: food.id, name: food.name, protein_per_serving: Number(food.protein_per_serving) || 0, servings});
+        }
+        if (!name || !ingredients.length) {
+            status.textContent = 'Enter a name and add at least one ingredient.';
+            return;
+        }
+        const saved = await recipes();
+        const recipe = {id: editing?.id ?? crypto.randomUUID(), name, ingredients};
+        await setData('food_recipes', [...saved.filter(item => item.id !== recipe.id), recipe]);
+        form.classList.add('hidden');
+        status.textContent = `Saved ${name}.`;
+        await render();
+    };
+    await render();
 }
